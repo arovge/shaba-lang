@@ -3,6 +3,9 @@ mod lexer;
 mod error;
 pub mod parser;
 
+#[cfg(test)]
+mod tests;
+
 use error::ShabaCompilerError;
 use crate::{lexer::Lexer, parser::Parser};
 

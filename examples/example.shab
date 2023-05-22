@@ -1,0 +1,47 @@
+
+let hello: String = "world"
+println(hello)
+
+let isHot: bool = false
+
+let value: i32 = 0
+let updated = increment(value)
+print(updated)
+
+let arr: i32[] = []
+let element: i32? = arr.first { $0 < 10 && $0 > 5 }
+
+fn increment(_ value: i32) -> i32 {
+    value + 1
+}
+
+let a: f32 = 0
+
+fn a1() async {}
+fn a2() async -> i32 { 5 }
+fn t1() throws {}
+fn t2() throws -> i32 { 5 }
+fn at1() async throws -> i32, SomeError {
+    if someCondition {
+        throw SomeError.BadCondition
+    }
+
+    return 8
+}
+
+struct Person {
+    let name: string
+    let age: u32
+}
+
+let me = Person(name: "joe", age: 30)
+
+extend Person {
+    fn description() -> string {
+        self.name + self.age.description
+    }
+
+    let displayAge: String {
+        self.name + " is " + self.age.description + " years old"
+    }
+}

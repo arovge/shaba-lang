@@ -86,16 +86,24 @@ impl Lexer {
     fn read_single_char_token(&mut self) -> Option<Token> {
         let token = match self.char()? {
             '=' => Some(Token::Equals),
-            '{' => Some(Token::LeftCurlyBrace),
-            '}' => Some(Token::RightCurlyBrace),
-            '(' => Some(Token::LeftParenthesis),
-            ')' => Some(Token::RightParenthesis),
-            '[' => Some(Token::LeftBracket),
-            ']' => Some(Token::RightBracket),
+            '+' => Some(Token::Plus),
+            '-' => Some(Token::Minus),
+            '*' => Some(Token::Asterisk),
+            '/' => Some(Token::Slash),
+            '>' => Some(Token::GreaterThan),
+            '<' => Some(Token::LessThan),
+            '{' => Some(Token::OpenBrace),
+            '}' => Some(Token::CloseBrace),
+            '(' => Some(Token::OpenParen),
+            ')' => Some(Token::CloseParen),
+            '[' => Some(Token::OpenBracket),
+            ']' => Some(Token::CloseBracket),
             ',' => Some(Token::Comma),
             ';' => Some(Token::Semicolon),
             ':' => Some(Token::Colon),
-            ' ' => Some(Token::Space),
+            '.' => Some(Token::Period),
+            '?' => Some(Token::QuestionMark),
+            '!' => Some(Token::ExclaimationPoint),
             _ => None,
         }?;
         self.eat_char();
@@ -106,11 +114,11 @@ impl Lexer {
         if self.char()? != '"' {
             return None;
         }
-        let start_position = self.position;
         self.position += 1;
+        let start_position = self.position;
         self.eat_until(|c| c == '"');
 
-        let chars = self.source[start_position..self.position].to_vec();
+        let chars = self.source[start_position..self.position - 1].to_vec();
         let str = String::from_iter(chars);
         return Some(str);
     }

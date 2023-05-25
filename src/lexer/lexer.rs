@@ -1,23 +1,14 @@
-use std::{str::CharIndices, iter::Peekable};
-
-use super::token::{Keyword, Literal, TokenKind, SourcePosition};
+use super::{token::{Keyword, Literal, TokenKind}, source::Source};
 use crate::lexer::token::Token;
 
-pub struct Lexer<'a> {
-    chars: Peekable<CharIndices<'a>>,
-    line_position: u32,
-    column_position: u32,
+pub struct Lexer {
+    source: Source
 }
 
-impl<'a> Lexer<'a> {
-    pub fn new(source: &'a str) -> Lexer<'a> {
-        let chars: Peekable<CharIndices<'a>> = source
-            .char_indices()
-            .peekable();
+impl Lexer {
+    pub fn new(source: &str) -> Lexer {
         Self {
-            chars,
-            line_position: 1,
-            column_position: 1
+            source: Source::new(source)
         }
     }
 
@@ -32,11 +23,11 @@ impl<'a> Lexer<'a> {
     }
 
     fn next_token(&mut self) -> Option<Token> {
-        self.eat_whitespace();
+        self.source.advance_to_next_token();
 
-        let start = self.source_position();
+        let start: super::token::SourcePosition = self.source.position();
         let token_kind = self.next_token_kind()?;
-        let end = self.source_position();
+        let end = self.source.position();
 
         return Token::new(token_kind, start, end).into();
     }
@@ -50,29 +41,27 @@ impl<'a> Lexer<'a> {
             return TokenKind::Literal(literal).into();
         }
 
-        if let Some(chunk) = self.read_chunk() {
-            return match chunk.as_str() {
+        if let Some(lexme) = self.read_lexme() {
+            return match lexme.as_str() {
                 "true" => TokenKind::Literal(Literal::Bool(true)).into(),
                 "false" => TokenKind::Literal(Literal::Bool(false)).into(),
                 "let" => TokenKind::Keyword(Keyword::Let).into(),
                 "var" => TokenKind::Keyword(Keyword::Var).into(),
-                _ => TokenKind::Identifier(chunk.to_string()).into(),
+                _ => TokenKind::Identifier(lexme.to_string()).into(),
             };
         }
 
-        let (_, ch) = self.next()?;
+        let ch = self.source.next()?;
         let str = String::from(ch);
         return TokenKind::Unknown(str).into();
     }
 
-    // There is likely a better name for what this returns
-    // Returns possible identifiers, boolean literals, etc
-    fn read_chunk(&mut self) -> Option<String> {
-        let ch = self.next_if(|ch| is_start_of_identifier(ch))?;
+    fn read_lexme(&mut self) -> Option<String> {
+        let ch = self.source.next_if(|ch| is_start_of_identifier(ch))?;
 
-        let mut chars: Vec<char> = vec![ch.1];
-        while let Some(ch) = self.next_if(|ch| is_identifier(ch)) {
-            chars.push(ch.1);
+        let mut chars: Vec<char> = vec![ch];
+        while let Some(ch) = self.source.next_if(|ch| is_identifier(ch)) {
+            chars.push(ch);
         }
         let str = String::from_iter(chars);
         return Some(str);
@@ -89,7 +78,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_single_char_token(&mut self) -> Option<TokenKind> {
-        let (_, ch) = self.peek()?;
+        let ch = self.source.peek()?;
         let token = match ch {
             '=' => Some(TokenKind::Equals),
             '+' => Some(TokenKind::Plus),
@@ -112,86 +101,42 @@ impl<'a> Lexer<'a> {
             '!' => Some(TokenKind::ExclaimationPoint),
             _ => None,
         }?;
-        self.next();
+        self.source.next();
         return token.into();
     }
 
     fn read_str(&mut self) -> Option<String> {
-        self.next_if(|ch| ch == '"')?;
+        self.source.next_if(|ch| ch == '"')?;
         let mut chars: Vec<char> = vec![];
 
-        while let Some(ch) = self.next_if(|ch| ch != '"') {
-            chars.push(ch.1);
+        while let Some(ch) = self.source.next_if(|ch| ch != '"') {
+            chars.push(ch);
         }
 
         let is_valid: bool = {
-            match self.peek() {
-                Some((_, '"')) => true,
-                _ => false
+            match self.source.peek() {
+                Some('"') => true,
+                _ => false,
             }
         };
 
         // TODO: Error handling for malformed strings
-        if !is_valid {
+        if !is_valid {}
 
-        }
-
-        self.next();
+        self.source.next();
         return String::from_iter(chars).into();
     }
 
     fn read_number(&mut self) -> Option<i32> {
-        let first_ch = self.next_if(|ch| ch.is_ascii_digit())?;
-        let mut chars: Vec<char> = vec![first_ch.1];
+        let first_ch = self.source.next_if(|ch| ch.is_ascii_digit())?;
+        let mut chars: Vec<char> = vec![first_ch];
 
-        while let Some(ch) = self.next_if(|ch| ch.is_ascii_digit()) {
-            chars.push(ch.1);
+        while let Some(ch) = self.source.next_if(|ch| ch.is_ascii_digit()) {
+            chars.push(ch);
         }
 
         let str = String::from_iter(chars);
         return str.parse::<i32>().ok();
-    }
-
-    fn eat_whitespace(&mut self) {
-        while let Some(_) = self.next_if(|ch| ch.is_ascii_whitespace()) {}
-    }
-
-    fn eat_while(&mut self, condition: fn(char) -> bool) {
-        while let Some(_) = self.next_if(condition) {}
-    }
-
-    fn source_position(&self) -> SourcePosition {
-        SourcePosition::new(self.line_position, self.column_position)
-    }
-
-    fn peek(&mut self) -> Option<&(usize, char)> {
-        self.chars.peek()
-    }
-
-    fn next_if(&mut self, condition: fn(char) -> bool) -> Option<(usize, char)> {
-        let next = self.chars.next_if(|ch| condition(ch.1))?;
-
-        if next.1 == '\n' {
-            self.line_position += 1;
-            self.column_position = 1;
-        } else {
-            self.column_position += 1;
-        }
-
-        return Some(next);
-    }
-
-    fn next(&mut self) -> Option<(usize, char)> {
-        let next = self.chars.next()?;
-
-        if next.1 == '\n' {
-            self.line_position += 1;
-            self.column_position = 1;
-        } else {
-            self.column_position += 1;
-        }
-
-        return Some(next);
     }
 }
 

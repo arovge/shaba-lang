@@ -18,12 +18,12 @@ impl Token {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SourcePosition {
-    line: u32,
-    column: u32,
+    line: usize,
+    column: usize,
 }
 
 impl SourcePosition {
-    pub fn new(line: u32, column: u32) -> Self {
+    pub fn new(line: usize, column: usize) -> Self {
         Self { line, column }
     }
 }

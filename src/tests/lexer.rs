@@ -6,7 +6,6 @@ use crate::lexer::{
 };
 
 #[test]
-#[ignore] // no comment support yet
 fn tokenizes_skips_whitespace_and_comments() {
     let source = r#"
         // this is a load bearing print statement
@@ -22,29 +21,47 @@ fn tokenizes_skips_whitespace_and_comments() {
     let expected = vec![
         Token::new(
             TokenKind::Identifier(String::from("print")),
-            SourcePosition::new(2, 9),
-            SourcePosition::new(2, 12),
+            SourcePosition::new(4, 9),
+            SourcePosition::new(4, 14),
         ),
         Token::new(
-            TokenKind::Identifier(String::from("isAustinCool")),
-            SourcePosition::new(2, 13),
-            SourcePosition::new(2, 25),
+            TokenKind::OpenParen,
+            SourcePosition::new(4, 14),
+            SourcePosition::new(4, 15),
         ),
         Token::new(
-            TokenKind::Equals.into(),
-            SourcePosition::new(2, 26),
-            SourcePosition::new(2, 27),
+            Literal::String(String::from("domo arigato, mr. roboto")).into(),
+            SourcePosition::new(4, 15),
+            SourcePosition::new(4, 41),
         ),
         Token::new(
-            TokenKind::Literal(Literal::Bool(true)),
-            SourcePosition::new(2, 28),
-            SourcePosition::new(2, 32),
+            TokenKind::CloseParen,
+            SourcePosition::new(4, 41),
+            SourcePosition::new(4, 42),
+        ),
+        Token::new(
+            Keyword::Let.into(),
+            SourcePosition::new(7, 9),
+            SourcePosition::new(7, 12),
+        ),
+        Token::new(
+            TokenKind::Identifier(String::from("forget")),
+            SourcePosition::new(7, 13),
+            SourcePosition::new(7, 19),
+        ),
+        Token::new(
+            TokenKind::Equals,
+            SourcePosition::new(7, 20),
+            SourcePosition::new(7, 21),
+        ),
+        Token::new(
+            Literal::String(String::from("about it")).into(),
+            SourcePosition::new(7, 22),
+            SourcePosition::new(7, 32),
         ),
     ];
 
-    for (actual_token, expected_token) in zip(result, expected) {
-        assert_eq!(actual_token, expected_token);
-    }
+    assert_tokens_eq(result, expected);
 }
 
 #[test]
@@ -78,9 +95,7 @@ fn tokenizes_bool() {
         ),
     ];
 
-    for (actual_token, expected_token) in zip(result, expected) {
-        assert_eq!(actual_token, expected_token);
-    }
+    assert_tokens_eq(result, expected);
 }
 
 #[test]
@@ -97,9 +112,7 @@ fn tokenizes_str() {
         SourcePosition::new(2, 24),
     )];
 
-    for (actual_token, expected_token) in zip(result, expected) {
-        assert_eq!(actual_token, expected_token);
-    }
+    assert_tokens_eq(result, expected);
 }
 
 #[test]
@@ -216,6 +229,12 @@ fn tokenizes_snippet() {
             SourcePosition::new(6, 43),
         ),
     ];
+
+    assert_tokens_eq(result, expected);
+}
+
+fn assert_tokens_eq(result: Vec<Token>, expected: Vec<Token>) {
+    assert_eq!(result.len(), expected.len());
 
     for (actual_token, expected_token) in zip(result, expected) {
         assert_eq!(actual_token, expected_token);

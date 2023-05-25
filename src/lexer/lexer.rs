@@ -25,7 +25,7 @@ impl Lexer {
     fn next_token(&mut self) -> Option<Token> {
         self.source.advance_to_next_token();
 
-        let start: super::token::SourcePosition = self.source.position();
+        let start = self.source.position();
         let token_kind = self.next_token_kind()?;
         let end = self.source.position();
 

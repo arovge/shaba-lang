@@ -28,8 +28,7 @@ impl Source {
 
     pub fn advance_past_next(&mut self, ch: char) {
         self.advance_while(|c| c != ch);
-        if let Some(a) = self.peek() {
-            println!("eating (special) {:?}", a);
+        if let Some(_) = self.peek() {
             self.next();
         }
     }
@@ -86,7 +85,6 @@ impl Source {
 
     fn increment_cursor(&mut self, ch: char) {
         if ch == '\n' {
-            println!("INCREMENTING THIS SHIII {:?}", self.cursor);
             self.line_position += 1;
             self.column_position = 1;
         } else {

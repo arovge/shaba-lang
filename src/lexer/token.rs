@@ -1,5 +1,35 @@
+use std::ops::Range;
+
 #[derive(Debug, Clone, PartialEq)]
-pub enum Token {
+pub struct Token {
+    kind: TokenKind,
+    source_position: Range<SourcePosition>,
+}
+
+impl Token {
+    pub fn new(kind: TokenKind, start: SourcePosition, end: SourcePosition) -> Self {
+        let source_position = start..end;
+        Self {
+            kind,
+            source_position,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SourcePosition {
+    line: u32,
+    column: u32,
+}
+
+impl SourcePosition {
+    pub fn new(line: u32, column: u32) -> Self {
+        Self { line, column }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum TokenKind {
     Equals,
     Plus,
     Minus,
@@ -23,20 +53,20 @@ pub enum Token {
     Identifier(String),
     Keyword(Keyword),
     EOF,
-    Unknown(String)
+    Unknown(String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
-    Integer(String),
-    FloatingPoint(String),
+    Integer(i32),
+    FloatingPoint(f32),
     Bool(bool),
-    String(String)
+    String(String),
 }
 
-impl From<Literal> for Token {
-    fn from(literal: Literal) -> Token {
-        Token::Literal(literal)
+impl From<Literal> for TokenKind {
+    fn from(literal: Literal) -> TokenKind {
+        TokenKind::Literal(literal)
     }
 }
 
@@ -46,8 +76,8 @@ pub enum Keyword {
     Var,
 }
 
-impl From<Keyword> for Token {
-    fn from(keyword: Keyword) -> Token {
-        Token::Keyword(keyword)
+impl From<Keyword> for TokenKind {
+    fn from(keyword: Keyword) -> TokenKind {
+        TokenKind::Keyword(keyword)
     }
 }

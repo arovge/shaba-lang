@@ -1,182 +1,197 @@
-use super::{
-    token::{Keyword, Literal},
-};
+use std::{str::CharIndices, iter::Peekable};
+
+use super::token::{Keyword, Literal, TokenKind, SourcePosition};
 use crate::lexer::token::Token;
 
-pub struct Lexer {
-    source: Vec<char>,
-    position: usize,
+pub struct Lexer<'a> {
+    chars: Peekable<CharIndices<'a>>,
+    line_position: u32,
+    column_position: u32,
 }
 
-impl Lexer {
-    pub fn new(source: String) -> Self {
+impl<'a> Lexer<'a> {
+    pub fn new(source: &'a str) -> Lexer<'a> {
+        let chars: Peekable<CharIndices<'a>> = source
+            .char_indices()
+            .peekable();
         Self {
-            source: source.chars().collect(),
-            position: 0,
+            chars,
+            line_position: 1,
+            column_position: 1
         }
     }
 
     pub fn tokenize(&mut self) -> Vec<Token> {
         let mut tokens = Vec::<Token>::new();
 
-        while self.position < self.source.len() {
-            let token = self.next_token();
+        while let Some(token) = self.next_token() {
             tokens.push(token);
         }
 
         return tokens;
     }
 
-    fn next_token(&mut self) -> Token {
-        // TODO: Return whitespace tokens?
-        self.eat_if_whitespace();
+    fn next_token(&mut self) -> Option<Token> {
+        self.eat_whitespace();
 
+        let start = self.source_position();
+        let token_kind = self.next_token_kind()?;
+        let end = self.source_position();
+
+        return Token::new(token_kind, start, end).into();
+    }
+
+    fn next_token_kind(&mut self) -> Option<TokenKind> {
         if let Some(token) = self.read_single_char_token() {
-            return token;
+            return token.into();
         }
 
         if let Some(literal) = self.read_literal() {
-            return literal.into();
+            return TokenKind::Literal(literal).into();
         }
 
-        if let Some(id) = self.read_identifier() {
-            return match id.as_str() {
-                "let" => Token::Keyword(Keyword::Let),
-                "var" => Token::Keyword(Keyword::Var),
-                _ => Token::Identifier(id.to_string()),
+        if let Some(chunk) = self.read_chunk() {
+            return match chunk.as_str() {
+                "true" => TokenKind::Literal(Literal::Bool(true)).into(),
+                "false" => TokenKind::Literal(Literal::Bool(false)).into(),
+                "let" => TokenKind::Keyword(Keyword::Let).into(),
+                "var" => TokenKind::Keyword(Keyword::Var).into(),
+                _ => TokenKind::Identifier(chunk.to_string()).into(),
             };
         }
-        let ch = self.char();
-        self.eat_char();
-        if let Some(ch) = ch {
-            return Token::Unknown(ch.to_string());
-        } else {
-            return Token::EOF;
-        }
+
+        let (_, ch) = self.next()?;
+        let str = String::from(ch);
+        return TokenKind::Unknown(str).into();
     }
 
-    fn read_identifier(&mut self) -> Option<String> {
-        if !is_start_of_identifier(self.char()?) {
-            return None;
-        }
+    // There is likely a better name for what this returns
+    // Returns possible identifiers, boolean literals, etc
+    fn read_chunk(&mut self) -> Option<String> {
+        let ch = self.next_if(|ch| is_start_of_identifier(ch))?;
 
-        let start_position = self.position;
-        while let Some(ch) = self.char() {
-            if !is_identifier(ch) {
-                break;
-            }
-            self.eat_char();
+        let mut chars: Vec<char> = vec![ch.1];
+        while let Some(ch) = self.next_if(|ch| is_identifier(ch)) {
+            chars.push(ch.1);
         }
-        let chars = self.source[start_position..self.position].to_vec();
-        return Some(String::from_iter(chars));
+        let str = String::from_iter(chars);
+        return Some(str);
     }
 
     fn read_literal(&mut self) -> Option<Literal> {
         if let Some(str) = self.read_str() {
             return Some(Literal::String(str));
         }
-        if let Some(bool) = self.read_bool() {
-            return Some(Literal::Bool(bool));
+        if let Some(num) = self.read_number() {
+            return Some(Literal::Integer(num));
         }
-
-        // TODO: number parsing
         return None;
     }
 
-    fn read_single_char_token(&mut self) -> Option<Token> {
-        let token = match self.char()? {
-            '=' => Some(Token::Equals),
-            '+' => Some(Token::Plus),
-            '-' => Some(Token::Minus),
-            '*' => Some(Token::Asterisk),
-            '/' => Some(Token::Slash),
-            '>' => Some(Token::GreaterThan),
-            '<' => Some(Token::LessThan),
-            '{' => Some(Token::OpenBrace),
-            '}' => Some(Token::CloseBrace),
-            '(' => Some(Token::OpenParen),
-            ')' => Some(Token::CloseParen),
-            '[' => Some(Token::OpenBracket),
-            ']' => Some(Token::CloseBracket),
-            ',' => Some(Token::Comma),
-            ';' => Some(Token::Semicolon),
-            ':' => Some(Token::Colon),
-            '.' => Some(Token::Period),
-            '?' => Some(Token::QuestionMark),
-            '!' => Some(Token::ExclaimationPoint),
+    fn read_single_char_token(&mut self) -> Option<TokenKind> {
+        let (_, ch) = self.peek()?;
+        let token = match ch {
+            '=' => Some(TokenKind::Equals),
+            '+' => Some(TokenKind::Plus),
+            '-' => Some(TokenKind::Minus),
+            '*' => Some(TokenKind::Asterisk),
+            '/' => Some(TokenKind::Slash),
+            '>' => Some(TokenKind::GreaterThan),
+            '<' => Some(TokenKind::LessThan),
+            '{' => Some(TokenKind::OpenBrace),
+            '}' => Some(TokenKind::CloseBrace),
+            '(' => Some(TokenKind::OpenParen),
+            ')' => Some(TokenKind::CloseParen),
+            '[' => Some(TokenKind::OpenBracket),
+            ']' => Some(TokenKind::CloseBracket),
+            ',' => Some(TokenKind::Comma),
+            ';' => Some(TokenKind::Semicolon),
+            ':' => Some(TokenKind::Colon),
+            '.' => Some(TokenKind::Period),
+            '?' => Some(TokenKind::QuestionMark),
+            '!' => Some(TokenKind::ExclaimationPoint),
             _ => None,
         }?;
-        self.eat_char();
-        return Some(token);
+        self.next();
+        return token.into();
     }
 
     fn read_str(&mut self) -> Option<String> {
-        if self.char()? != '"' {
-            return None;
-        }
-        self.position += 1;
-        let start_position = self.position;
-        self.eat_until(|c| c == '"');
+        self.next_if(|ch| ch == '"')?;
+        let mut chars: Vec<char> = vec![];
 
-        let chars = self.source[start_position..self.position - 1].to_vec();
+        while let Some(ch) = self.next_if(|ch| ch != '"') {
+            chars.push(ch.1);
+        }
+
+        let is_valid: bool = {
+            match self.peek() {
+                Some((_, '"')) => true,
+                _ => false
+            }
+        };
+
+        // TODO: Error handling for malformed strings
+        if !is_valid {
+
+        }
+
+        self.next();
+        return String::from_iter(chars).into();
+    }
+
+    fn read_number(&mut self) -> Option<i32> {
+        let first_ch = self.next_if(|ch| ch.is_ascii_digit())?;
+        let mut chars: Vec<char> = vec![first_ch.1];
+
+        while let Some(ch) = self.next_if(|ch| ch.is_ascii_digit()) {
+            chars.push(ch.1);
+        }
+
         let str = String::from_iter(chars);
-        return Some(str);
+        return str.parse::<i32>().ok();
     }
 
-    fn read_bool(&mut self) -> Option<bool> {
-        let true_len = "true".len();
-        let false_len = "false".len();
-
-        // TODO: This doesn't check to see if the character after "true" or "false" is whitespace (or semicolon)
-        if self.position + false_len < self.source[self.position..].len() {
-            let chars = &self.source[self.position..(self.position + false_len)];
-            let str = String::from_iter(chars);
-            if str.eq("false") {
-                self.position += false_len;
-                return Some(false);
-            }
-        }
-
-        if self.position + true_len < self.source[self.position..].len() {
-            let chars = &self.source[self.position..(self.position + true_len)];
-            let str = String::from_iter(chars);
-            if str.eq("true") {
-                self.position += true_len;
-                return Some(true);
-            }
-        }
-
-        return None;
+    fn eat_whitespace(&mut self) {
+        while let Some(_) = self.next_if(|ch| ch.is_ascii_whitespace()) {}
     }
 
-    fn eat_if_whitespace(&mut self) {
-        while let Some(ch) = self.char() {
-            if ch.is_ascii_whitespace() {
-                self.position += 1;
-            } else {
-                break;
-            }
-        }
+    fn eat_while(&mut self, condition: fn(char) -> bool) {
+        while let Some(_) = self.next_if(condition) {}
     }
 
-    fn eat_char(&mut self) {
-        if self.position >= self.source.len() {
-            return;
-        }
-        self.position += 1;
+    fn source_position(&self) -> SourcePosition {
+        SourcePosition::new(self.line_position, self.column_position)
     }
 
-    fn eat_until(&mut self, condition: fn(char) -> bool) {
-        while let Some(ch) = self.char() {
-            self.position += 1;
-            if condition(ch) {
-                break;
-            }
-        }
+    fn peek(&mut self) -> Option<&(usize, char)> {
+        self.chars.peek()
     }
 
-    fn char(&self) -> Option<char> {
-        self.source.get(self.position).map(|ch| ch.clone())
+    fn next_if(&mut self, condition: fn(char) -> bool) -> Option<(usize, char)> {
+        let next = self.chars.next_if(|ch| condition(ch.1))?;
+
+        if next.1 == '\n' {
+            self.line_position += 1;
+            self.column_position = 1;
+        } else {
+            self.column_position += 1;
+        }
+
+        return Some(next);
+    }
+
+    fn next(&mut self) -> Option<(usize, char)> {
+        let next = self.chars.next()?;
+
+        if next.1 == '\n' {
+            self.line_position += 1;
+            self.column_position = 1;
+        } else {
+            self.column_position += 1;
+        }
+
+        return Some(next);
     }
 }
 

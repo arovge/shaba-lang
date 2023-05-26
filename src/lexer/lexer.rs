@@ -13,7 +13,7 @@ impl Lexer {
     }
 
     pub fn tokenize(&mut self) -> Result<Vec<Token>, LexerError> {
-        let mut tokens = Vec::<Token>::new();
+        let mut tokens: Vec<Token> = Vec::<Token>::new();
 
         while let Some(token) = self.next_token()? {
             tokens.push(token);
@@ -39,18 +39,22 @@ impl Lexer {
             return Ok(Some(token));
         }
 
-        if let Some(literal) = self.read_literal()? {
-            return Ok(Some(TokenKind::Literal(literal)));
+        if let Some(str) = self.read_str()? {
+            return Ok(Some(TokenKind::Literal(Literal::String(str))));
+        }
+        if let Some(num) = self.read_number() {
+            return Ok(Some(TokenKind::Literal(Literal::Integer(num))));
         }
 
         if let Some(lexme) = self.read_lexme() {
-            return match lexme.as_str() {
-                "true" => Ok(Some(TokenKind::Literal(Literal::Bool(true)))),
-                "false" => Ok(Some(TokenKind::Literal(Literal::Bool(false)))),
-                "let" => Ok(Some(TokenKind::Keyword(Keyword::Let))),
-                "var" => Ok(Some(TokenKind::Keyword(Keyword::Var))),
-                _ => Ok(Some(TokenKind::Identifier(lexme.to_string()))),
+            let token_kind = match lexme.as_str() {
+                "true" => TokenKind::Literal(Literal::Bool(true)),
+                "false" => TokenKind::Literal(Literal::Bool(false)),
+                "let" => TokenKind::Keyword(Keyword::Let),
+                "var" => TokenKind::Keyword(Keyword::Var),
+                _ => TokenKind::Identifier(lexme.to_string()),
             };
+            return Ok(Some(token_kind));
         }
 
         let Some(ch) = self.source.next() else { return Ok(None) };
@@ -67,16 +71,6 @@ impl Lexer {
         }
         let str = String::from_iter(chars);
         return Some(str);
-    }
-
-    fn read_literal(&mut self) -> Result<Option<Literal>, LexerError> {
-        if let Some(str) = self.read_str()? {
-            return Ok(Some(Literal::String(str)));
-        }
-        if let Some(num) = self.read_number() {
-            return Ok(Some(Literal::Integer(num)));
-        }
-        return Ok(None);
     }
 
     fn read_single_char_token(&mut self) -> Option<TokenKind> {
@@ -108,41 +102,30 @@ impl Lexer {
     }
 
     fn read_str(&mut self) -> Result<Option<String>, LexerError> {
-        let Some(next) = self.source.next_if(|ch| ch == '"') else {
+        let Some(_) = self.source.next_if(|ch| ch == '"') else {
             return Ok(None);
         };
-        let mut chars: Vec<char> = vec![];
 
-        while let Some(ch) = self.source.next_if(|ch| ch != '"') {
-            chars.push(ch);
-        }
+        let str = self.source
+            .take_while(|ch| ch != '"')
+            .unwrap_or(String::from(""));
 
-        let is_valid: bool = {
-            match self.source.peek() {
-                Some('"') => true,
-                _ => false,
-            }
-        };
+        let is_string_terminated = self.source.peek() == Some('"');
 
         // TODO: Include source positon
-        if !is_valid {
+        if !is_string_terminated {
             return Err(LexerError::UnterminatedString);
         }
 
         self.source.next();
-        return Ok(Some(String::from_iter(chars)));
+        return Ok(Some(str));
     }
 
     fn read_number(&mut self) -> Option<i32> {
-        let first_ch = self.source.next_if(|ch| ch.is_ascii_digit())?;
-        let mut chars: Vec<char> = vec![first_ch];
-
-        while let Some(ch) = self.source.next_if(|ch| ch.is_ascii_digit()) {
-            chars.push(ch);
-        }
-
-        let str = String::from_iter(chars);
-        return str.parse::<i32>().ok();
+        self.source
+            .take_while(|ch| ch.is_ascii_digit())?
+            .parse::<i32>()
+            .ok()
     }
 }
 

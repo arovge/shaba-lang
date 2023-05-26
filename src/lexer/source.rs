@@ -31,6 +31,18 @@ impl Source {
         }
     }
 
+    pub fn take_while(&mut self, condition: impl Fn(char) -> bool) -> Option<String> {
+        let first_ch = self.next_if(&condition)?;
+        let mut chars: Vec<char> = vec![first_ch];
+
+        while let Some(ch) = self.next_if(&condition) {
+            chars.push(ch);
+        }
+
+        let str = String::from_iter(chars);
+        return Some(str);
+    }
+
     pub fn advance_while(&mut self, condition: impl Fn(char) -> bool) {
         while let Some(_) = self.next_if(&condition) {}
     }

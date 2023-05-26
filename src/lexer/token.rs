@@ -14,6 +14,10 @@ impl Token {
             source_position,
         }
     }
+
+    pub fn kind(&self) -> &TokenKind {
+        &self.kind
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

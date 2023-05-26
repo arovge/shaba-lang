@@ -1,4 +1,4 @@
-use super::{token::{Keyword, Literal, TokenKind}, source::Source};
+use super::{token::{Keyword, Literal, TokenKind}, source::Source, error::LexerError};
 use crate::lexer::token::Token;
 
 pub struct Lexer {
@@ -12,48 +12,50 @@ impl Lexer {
         }
     }
 
-    pub fn tokenize(&mut self) -> Vec<Token> {
+    pub fn tokenize(&mut self) -> Result<Vec<Token>, LexerError> {
         let mut tokens = Vec::<Token>::new();
 
-        while let Some(token) = self.next_token() {
+        while let Some(token) = self.next_token()? {
             tokens.push(token);
         }
 
-        return tokens;
+        return Ok(tokens);
     }
 
-    fn next_token(&mut self) -> Option<Token> {
+    fn next_token(&mut self) -> Result<Option<Token>, LexerError> {
         self.source.advance_to_next_token();
 
         let start = self.source.position();
-        let token_kind = self.next_token_kind()?;
+        let Some(token_kind) = self.next_token_kind()? else {
+            return Ok(None);
+        };
         let end = self.source.position();
 
-        return Token::new(token_kind, start, end).into();
+        Ok(Some(Token::new(token_kind, start, end)))
     }
 
-    fn next_token_kind(&mut self) -> Option<TokenKind> {
+    fn next_token_kind(&mut self) -> Result<Option<TokenKind>, LexerError> {
         if let Some(token) = self.read_single_char_token() {
-            return token.into();
+            return Ok(Some(token));
         }
 
-        if let Some(literal) = self.read_literal() {
-            return TokenKind::Literal(literal).into();
+        if let Some(literal) = self.read_literal()? {
+            return Ok(Some(TokenKind::Literal(literal)));
         }
 
         if let Some(lexme) = self.read_lexme() {
             return match lexme.as_str() {
-                "true" => TokenKind::Literal(Literal::Bool(true)).into(),
-                "false" => TokenKind::Literal(Literal::Bool(false)).into(),
-                "let" => TokenKind::Keyword(Keyword::Let).into(),
-                "var" => TokenKind::Keyword(Keyword::Var).into(),
-                _ => TokenKind::Identifier(lexme.to_string()).into(),
+                "true" => Ok(Some(TokenKind::Literal(Literal::Bool(true)))),
+                "false" => Ok(Some(TokenKind::Literal(Literal::Bool(false)))),
+                "let" => Ok(Some(TokenKind::Keyword(Keyword::Let))),
+                "var" => Ok(Some(TokenKind::Keyword(Keyword::Var))),
+                _ => Ok(Some(TokenKind::Identifier(lexme.to_string()))),
             };
         }
 
-        let ch = self.source.next()?;
+        let Some(ch) = self.source.next() else { return Ok(None) };
         let str = String::from(ch);
-        return TokenKind::Unknown(str).into();
+        return Ok(Some(TokenKind::Unknown(str)));
     }
 
     fn read_lexme(&mut self) -> Option<String> {
@@ -67,14 +69,14 @@ impl Lexer {
         return Some(str);
     }
 
-    fn read_literal(&mut self) -> Option<Literal> {
-        if let Some(str) = self.read_str() {
-            return Some(Literal::String(str));
+    fn read_literal(&mut self) -> Result<Option<Literal>, LexerError> {
+        if let Some(str) = self.read_str()? {
+            return Ok(Some(Literal::String(str)));
         }
         if let Some(num) = self.read_number() {
-            return Some(Literal::Integer(num));
+            return Ok(Some(Literal::Integer(num)));
         }
-        return None;
+        return Ok(None);
     }
 
     fn read_single_char_token(&mut self) -> Option<TokenKind> {
@@ -105,8 +107,10 @@ impl Lexer {
         return token.into();
     }
 
-    fn read_str(&mut self) -> Option<String> {
-        self.source.next_if(|ch| ch == '"')?;
+    fn read_str(&mut self) -> Result<Option<String>, LexerError> {
+        let Some(next) = self.source.next_if(|ch| ch == '"') else {
+            return Ok(None);
+        };
         let mut chars: Vec<char> = vec![];
 
         while let Some(ch) = self.source.next_if(|ch| ch != '"') {
@@ -120,11 +124,13 @@ impl Lexer {
             }
         };
 
-        // TODO: Error handling for malformed strings
-        if !is_valid {}
+        // TODO: Include source positon
+        if !is_valid {
+            return Err(LexerError::UnterminatedString);
+        }
 
         self.source.next();
-        return String::from_iter(chars).into();
+        return Ok(Some(String::from_iter(chars)));
     }
 
     fn read_number(&mut self) -> Option<i32> {

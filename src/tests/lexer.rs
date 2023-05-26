@@ -2,8 +2,21 @@ use std::iter::zip;
 
 use crate::lexer::{
     token::{Keyword, Literal, SourcePosition, Token, TokenKind},
-    Lexer,
+    Lexer, error::LexerError,
 };
+
+#[test]
+fn tokenizes_unterminated_str() {
+    let source = r#"
+        let person = "Bob
+    "#;
+    let mut lexer = Lexer::new(source);
+    let result = lexer.tokenize().unwrap_err();
+
+    let expected = LexerError::UnterminatedString;
+
+    assert_eq!(result, expected);
+}
 
 #[test]
 fn tokenizes_skips_whitespace_and_comments() {
@@ -16,7 +29,7 @@ fn tokenizes_skips_whitespace_and_comments() {
         let forget = "about it"
     "#;
     let mut lexer = Lexer::new(source);
-    let result: Vec<Token> = lexer.tokenize();
+    let result: Vec<Token> = lexer.tokenize().unwrap();
 
     let expected = vec![
         Token::new(
@@ -70,7 +83,7 @@ fn tokenizes_bool() {
         let isAustinCool = true
     "#;
     let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize();
+    let result = lexer.tokenize().unwrap();
 
     let expected = vec![
         Token::new(
@@ -104,7 +117,7 @@ fn tokenizes_str() {
         "hello, world!"
     "#;
     let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize();
+    let result = lexer.tokenize().unwrap();
 
     let expected = vec![Token::new(
         Literal::String(String::from("hello, world!")).into(),
@@ -125,7 +138,7 @@ fn tokenizes_snippet() {
         let isNumGreaterThanZero = num > 0
     "#;
     let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize();
+    let result = lexer.tokenize().unwrap();
 
     let expected: Vec<Token> = vec![
         Token::new(

@@ -22,17 +22,6 @@ impl Source {
         SourcePosition::new(self.line_position, self.column_position)
     }
 
-    pub fn advance_while(&mut self, condition: impl Fn(char) -> bool) {
-        while let Some(_) = self.next_if(&condition) {}
-    }
-
-    pub fn advance_past_next(&mut self, ch: char) {
-        self.advance_while(|c| c != ch);
-        if let Some(_) = self.peek() {
-            self.next();
-        }
-    }
-
     pub fn advance_to_next_token(&mut self) {
         while self.is_at_start_of_comment() || self.is_next_char_whitespace() {
             if self.is_at_start_of_comment() {
@@ -42,8 +31,15 @@ impl Source {
         }
     }
 
-    pub fn advance_to_next_line(&mut self) {
-        self.advance_past_next('\n');
+    pub fn advance_while(&mut self, condition: impl Fn(char) -> bool) {
+        while let Some(_) = self.next_if(&condition) {}
+    }
+
+    pub fn advance_past_next(&mut self, ch: char) {
+        self.advance_while(|c| c != ch);
+        if let Some(_) = self.peek() {
+            self.next();
+        }
     }
 
     pub fn peek(&mut self) -> Option<char> {
@@ -102,5 +98,9 @@ impl Source {
     fn is_next_char_whitespace(&mut self) -> bool {
         let Some(ch) = self.peek() else { return false; };
         return ch.is_ascii_whitespace();
+    }
+
+    fn advance_to_next_line(&mut self) {
+        self.advance_past_next('\n');
     }
 }

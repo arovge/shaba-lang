@@ -12,7 +12,7 @@ use crate::{lexer::Lexer, parser::Parser};
 fn main()-> Result<(), ShabaCompilerError> {
     let source = driver::read_source()?;
     let mut lexer = Lexer::new(source.as_str());
-    let tokens = lexer.tokenize();
+    let tokens = lexer.tokenize()?;
 
     dbg!(tokens.clone());
 

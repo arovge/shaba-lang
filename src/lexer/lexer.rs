@@ -1,14 +1,18 @@
-use super::{token::{Keyword, Literal, TokenKind}, source::Source, error::LexerError};
+use super::{
+    error::LexerError,
+    source::Source,
+    token::{Keyword, Literal, TokenKind},
+};
 use crate::lexer::token::Token;
 
 pub struct Lexer {
-    source: Source
+    source: Source,
 }
 
 impl Lexer {
     pub fn new(source: &str) -> Lexer {
         Self {
-            source: Source::new(source)
+            source: Source::new(source),
         }
     }
 
@@ -106,7 +110,8 @@ impl Lexer {
             return Ok(None);
         };
 
-        let str = self.source
+        let str = self
+            .source
             .take_while(|ch| ch != '"')
             .unwrap_or(String::from(""));
 

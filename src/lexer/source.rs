@@ -55,22 +55,17 @@ impl Source {
     }
 
     pub fn peek(&mut self) -> Option<char> {
-        let ch = *self.chars
-            .get(self.cursor)?;
+        let ch = *self.chars.get(self.cursor)?;
         return Some(ch);
     }
 
     pub fn peek_nth(&mut self, offset: usize) -> Option<char> {
-        let ch = *self
-            .chars
-            .get(self.cursor + offset)?;
+        let ch = *self.chars.get(self.cursor + offset)?;
         return Some(ch);
     }
 
     pub fn next_if(&mut self, condition: impl Fn(char) -> bool) -> Option<char> {
-        let next = *self
-            .chars
-            .get(self.cursor)?;
+        let next = *self.chars.get(self.cursor)?;
 
         if !condition(next) {
             return None;
@@ -82,9 +77,7 @@ impl Source {
     }
 
     pub fn next(&mut self) -> Option<char> {
-        let next = *self
-                .chars
-                .get(self.cursor)?;
+        let next = *self.chars.get(self.cursor)?;
 
         self.increment_cursor(next);
 
@@ -103,8 +96,7 @@ impl Source {
     }
 
     fn is_at_start_of_comment(&mut self) -> bool {
-        self.peek() == Some('/')
-        && self.peek_nth(1) == Some('/')
+        self.peek() == Some('/') && self.peek_nth(1) == Some('/')
     }
 
     fn is_next_char_whitespace(&mut self) -> bool {

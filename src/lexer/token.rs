@@ -3,16 +3,13 @@ use std::ops::Range;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     kind: TokenKind,
-    source_position: Range<SourcePosition>,
+    position: Range<SourcePosition>,
 }
 
 impl Token {
     pub fn new(kind: TokenKind, start: SourcePosition, end: SourcePosition) -> Self {
-        let source_position = start..end;
-        Self {
-            kind,
-            source_position,
-        }
+        let position = start..end;
+        Self { kind, position }
     }
 
     pub fn kind(&self) -> &TokenKind {
@@ -40,7 +37,9 @@ pub enum TokenKind {
     Asterisk,
     Slash,
     GreaterThan,
+    GreaterThanEqual,
     LessThan,
+    LessThanEqual,
     OpenBrace,
     CloseBrace,
     OpenParen,
@@ -56,8 +55,6 @@ pub enum TokenKind {
     Literal(Literal),
     Identifier(String),
     Keyword(Keyword),
-    EOF,
-    Unknown(String),
 }
 
 #[derive(Debug, Clone, PartialEq)]

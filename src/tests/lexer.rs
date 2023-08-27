@@ -14,7 +14,25 @@ fn tokenizes_unterminated_str() {
     let mut lexer = Lexer::new(source);
     let result = lexer.tokenize().unwrap_err();
 
-    let expected = LexerError::UnterminatedString;
+    let expected = LexerError::UnterminatedString {
+        position: SourcePosition::new(2, 22)..SourcePosition::new(3, 5),
+    };
+
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn tokenizes_unknown_lexme() {
+    let source = r#"
+        let amogus = ඞ
+    "#;
+    let mut lexer = Lexer::new(source);
+    let result = lexer.tokenize().unwrap_err();
+
+    let expected = LexerError::UnknownLexme {
+        lexme: 'ඞ',
+        position: SourcePosition::new(2, 22)..SourcePosition::new(2, 23),
+    };
 
     assert_eq!(result, expected);
 }

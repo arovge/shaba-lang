@@ -1,5 +1,5 @@
 use super::{
-    error::LexerError,
+    error::{LexerError, TokenizeError},
     source::Source,
     token::{Keyword, Literal, TokenKind},
 };
@@ -30,51 +30,45 @@ impl Lexer {
         self.source.advance_to_next_token();
 
         let start = self.source.position();
-        let Some(token_kind) = self.next_token_kind()? else {
-            return Ok(None);
-        };
+        let next_token_kind = self.next_token_kind();
         let end = self.source.position();
 
-        Ok(Some(Token::new(token_kind, start, end)))
+        match next_token_kind {
+            Ok(Some(token_kind)) => Ok(Some(Token::new(token_kind, start, end))),
+            Ok(None) => Ok(None),
+            Err(e) => Err(e.lexer_err(start, end)),
+        }
     }
 
-    fn next_token_kind(&mut self) -> Result<Option<TokenKind>, LexerError> {
-        if let Some(token) = self.read_single_char_token() {
-            return Ok(Some(token));
+    fn next_token_kind(&mut self) -> Result<Option<TokenKind>, TokenizeError> {
+        let token_kind = self.read_single_char_token()
+            .or(self.read_literal()?)
+            .or(self.read_lexme());
+
+        if token_kind.is_some() {
+            return Ok(token_kind);
         }
 
-        if let Some(str) = self.read_str()? {
-            return Ok(Some(TokenKind::Literal(Literal::String(str))));
-        }
-        if let Some(num) = self.read_number() {
-            return Ok(Some(TokenKind::Literal(Literal::Integer(num))));
-        }
-
-        if let Some(lexme) = self.read_lexme() {
-            let token_kind = match lexme.as_str() {
-                "true" => TokenKind::Literal(Literal::Bool(true)),
-                "false" => TokenKind::Literal(Literal::Bool(false)),
-                "let" => TokenKind::Keyword(Keyword::Let),
-                "var" => TokenKind::Keyword(Keyword::Var),
-                _ => TokenKind::Identifier(lexme.to_string()),
-            };
-            return Ok(Some(token_kind));
-        }
-
-        let Some(ch) = self.source.next() else { return Ok(None) };
-        let str = String::from(ch);
-        return Ok(Some(TokenKind::Unknown(str)));
+        let Some(lexme) = self.source.next() else { return Ok(None) };
+        return Err(TokenizeError::UnknownLexme { lexme });
     }
 
-    fn read_lexme(&mut self) -> Option<String> {
+    fn read_lexme(&mut self) -> Option<TokenKind> {
         let ch = self.source.next_if(|ch| is_start_of_identifier(ch))?;
 
         let mut chars: Vec<char> = vec![ch];
         while let Some(ch) = self.source.next_if(|ch| is_identifier(ch)) {
             chars.push(ch);
         }
-        let str = String::from_iter(chars);
-        return Some(str);
+        let lexme = String::from_iter(chars);
+        let token_kind = match lexme.as_str() {
+            "true" => TokenKind::Literal(Literal::Bool(true)),
+            "false" => TokenKind::Literal(Literal::Bool(false)),
+            "let" => TokenKind::Keyword(Keyword::Let),
+            "var" => TokenKind::Keyword(Keyword::Var),
+            _ => TokenKind::Identifier(lexme.to_string()),
+        };
+        return Some(token_kind);
     }
 
     fn read_single_char_token(&mut self) -> Option<TokenKind> {
@@ -85,8 +79,20 @@ impl Lexer {
             '-' => Some(TokenKind::Minus),
             '*' => Some(TokenKind::Asterisk),
             '/' => Some(TokenKind::Slash),
-            '>' => Some(TokenKind::GreaterThan),
-            '<' => Some(TokenKind::LessThan),
+            '>' => {
+                if self.source.peek_next() == Some('=') {
+                    Some(TokenKind::GreaterThanEqual)
+                } else {
+                    Some(TokenKind::GreaterThan)
+                }
+            },
+            '<' => {
+                if self.source.peek_next() == Some('=') {
+                    Some(TokenKind::LessThanEqual)
+                } else {
+                    Some(TokenKind::LessThan)
+                }
+            },
             '{' => Some(TokenKind::OpenBrace),
             '}' => Some(TokenKind::CloseBrace),
             '(' => Some(TokenKind::OpenParen),
@@ -105,7 +111,19 @@ impl Lexer {
         return token.into();
     }
 
-    fn read_str(&mut self) -> Result<Option<String>, LexerError> {
+    fn read_literal(&mut self) -> Result<Option<TokenKind>, TokenizeError> {
+        if let Some(str) = self.read_str()? {
+            let token_kind = TokenKind::Literal(Literal::String(str));
+            return Ok(Some(token_kind));
+        }
+        if let Some(num) = self.read_number() {
+            let token_kind = TokenKind::Literal(num);
+            return Ok(Some(token_kind));
+        }
+        Ok(None)
+    }
+
+    fn read_str(&mut self) -> Result<Option<String>, TokenizeError> {
         let Some(_) = self.source.next_if(|ch| ch == '"') else {
             return Ok(None);
         };
@@ -115,27 +133,28 @@ impl Lexer {
             .take_while(|ch| ch != '"')
             .unwrap_or(String::from(""));
 
-        let is_string_terminated = self.source.peek() == Some('"');
+        let is_unterminated = self.source.peek() != Some('"');
 
-        // TODO: Include source positon
-        if !is_string_terminated {
-            return Err(LexerError::UnterminatedString);
+        if is_unterminated {
+            return Err(TokenizeError::UnterminatedString);
         }
 
         self.source.next();
         return Ok(Some(str));
     }
 
-    fn read_number(&mut self) -> Option<i32> {
-        self.source
+    fn read_number(&mut self) -> Option<Literal> {
+        let num = self
+            .source
             .take_while(|ch| ch.is_ascii_digit())?
             .parse::<i32>()
-            .ok()
+            .ok()?;
+        return Some(Literal::Integer(num));
     }
 }
 
 fn is_start_of_identifier(c: char) -> bool {
-    c.is_alphabetic() || c == '_'
+    c.is_ascii_alphabetic() || c == '_'
 }
 
 fn is_identifier(c: char) -> bool {

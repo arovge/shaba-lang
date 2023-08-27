@@ -1,8 +1,9 @@
 use std::iter::zip;
 
 use crate::lexer::{
+    error::LexerError,
     token::{Keyword, Literal, SourcePosition, Token, TokenKind},
-    Lexer, error::LexerError,
+    Lexer,
 };
 
 #[test]
@@ -13,9 +14,61 @@ fn tokenizes_unterminated_str() {
     let mut lexer = Lexer::new(source);
     let result = lexer.tokenize().unwrap_err();
 
-    let expected = LexerError::UnterminatedString;
+    let expected = LexerError::UnterminatedString {
+        position: SourcePosition::new(2, 22)..SourcePosition::new(3, 5),
+    };
 
     assert_eq!(result, expected);
+}
+
+#[test]
+fn tokenizes_unknown_lexme() {
+    let source = r#"
+        let amogus = ඞ
+    "#;
+    let mut lexer = Lexer::new(source);
+    let result = lexer.tokenize().unwrap_err();
+
+    let expected = LexerError::UnknownLexme {
+        lexme: 'ඞ',
+        position: SourcePosition::new(2, 22)..SourcePosition::new(2, 23),
+    };
+
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn tokenizes_empty_str() {
+    let source = r#"
+        let message = ""
+    "#;
+    let mut lexer = Lexer::new(source);
+    let result = lexer.tokenize().unwrap();
+
+    let expected = vec![
+        Token::new(
+            TokenKind::Keyword(Keyword::Let),
+            SourcePosition::new(2, 9),
+            SourcePosition::new(2, 12),
+        ),
+        Token::new(
+            TokenKind::Identifier(String::from("message")),
+            SourcePosition::new(2, 13),
+            SourcePosition::new(2, 20),
+        ),
+        Token::new(
+            TokenKind::Equals,
+            SourcePosition::new(2, 21),
+            SourcePosition::new(2, 22),
+        ),
+        Token::new(
+            TokenKind::Literal(Literal::String(String::from(""))),
+            SourcePosition::new(2, 23),
+            SourcePosition::new(2, 25),
+        ),
+    ];
+
+    assert_tokens_eq(result, expected);
 }
 
 #[test]
@@ -78,7 +131,7 @@ fn tokenizes_skips_whitespace_and_comments() {
 }
 
 #[test]
-fn tokenizes_bool() {
+fn tokenizes_literal_bool() {
     let source = r#"
         let isAustinCool = true
     "#;
@@ -112,7 +165,7 @@ fn tokenizes_bool() {
 }
 
 #[test]
-fn tokenizes_str() {
+fn tokenizes_literal_str() {
     let source = r#"
         "hello, world!"
     "#;
@@ -124,6 +177,40 @@ fn tokenizes_str() {
         SourcePosition::new(2, 9),
         SourcePosition::new(2, 24),
     )];
+
+    assert_tokens_eq(result, expected);
+}
+
+#[test]
+fn tokenizes_literal_integer() {
+    let source = r#"
+        let age = 24
+    "#;
+    let mut lexer = Lexer::new(source);
+    let result = lexer.tokenize().unwrap();
+
+    let expected = vec![
+        Token::new(
+            TokenKind::Keyword(Keyword::Let),
+            SourcePosition::new(2, 9),
+            SourcePosition::new(2, 12),
+        ),
+        Token::new(
+            TokenKind::Identifier(String::from("age")),
+            SourcePosition::new(2, 13),
+            SourcePosition::new(2, 16),
+        ),
+        Token::new(
+            TokenKind::Equals,
+            SourcePosition::new(2, 17),
+            SourcePosition::new(2, 18),
+        ),
+        Token::new(
+            TokenKind::Literal(Literal::Integer(24)),
+            SourcePosition::new(2, 19),
+            SourcePosition::new(2, 21),
+        ),
+    ];
 
     assert_tokens_eq(result, expected);
 }

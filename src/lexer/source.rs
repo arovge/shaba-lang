@@ -31,6 +31,18 @@ impl Source {
         }
     }
 
+    pub fn take_while(&mut self, condition: impl Fn(char) -> bool) -> Option<String> {
+        let first_ch = self.next_if(&condition)?;
+        let mut chars: Vec<char> = vec![first_ch];
+
+        while let Some(ch) = self.next_if(&condition) {
+            chars.push(ch);
+        }
+
+        let str = String::from_iter(chars);
+        return Some(str);
+    }
+
     pub fn advance_while(&mut self, condition: impl Fn(char) -> bool) {
         while let Some(_) = self.next_if(&condition) {}
     }
@@ -43,22 +55,17 @@ impl Source {
     }
 
     pub fn peek(&mut self) -> Option<char> {
-        let ch = *self.chars
-            .get(self.cursor)?;
+        let ch = *self.chars.get(self.cursor)?;
         return Some(ch);
     }
 
-    pub fn peek_nth(&mut self, offset: usize) -> Option<char> {
-        let ch = *self
-            .chars
-            .get(self.cursor + offset)?;
+    pub fn peek_next(&mut self) -> Option<char> {
+        let ch = *self.chars.get(self.cursor + 1)?;
         return Some(ch);
     }
 
     pub fn next_if(&mut self, condition: impl Fn(char) -> bool) -> Option<char> {
-        let next = *self
-            .chars
-            .get(self.cursor)?;
+        let next = *self.chars.get(self.cursor)?;
 
         if !condition(next) {
             return None;
@@ -70,9 +77,7 @@ impl Source {
     }
 
     pub fn next(&mut self) -> Option<char> {
-        let next = *self
-                .chars
-                .get(self.cursor)?;
+        let next = *self.chars.get(self.cursor)?;
 
         self.increment_cursor(next);
 
@@ -91,8 +96,7 @@ impl Source {
     }
 
     fn is_at_start_of_comment(&mut self) -> bool {
-        self.peek() == Some('/')
-        && self.peek_nth(1) == Some('/')
+        self.peek() == Some('/') && self.peek_next() == Some('/')
     }
 
     fn is_next_char_whitespace(&mut self) -> bool {

@@ -6,7 +6,7 @@ use crate::parser::error::ParserError;
 pub enum ShabaCompilerError {
     DriverError,
     LexerError,
-    ParserError
+    ParserError,
 }
 
 impl From<DriverError> for ShabaCompilerError {

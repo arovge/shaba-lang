@@ -41,7 +41,8 @@ impl Lexer {
     }
 
     fn next_token_kind(&mut self) -> Result<Option<TokenKind>, TokenizeError> {
-        let token_kind = self.read_single_char_token()
+        let token_kind = self
+            .read_single_char_token()
             .or(self.read_literal()?)
             .or(self.read_lexme());
 
@@ -85,14 +86,14 @@ impl Lexer {
                 } else {
                     Some(TokenKind::GreaterThan)
                 }
-            },
+            }
             '<' => {
                 if self.source.peek_next() == Some('=') {
                     Some(TokenKind::LessThanEqual)
                 } else {
                     Some(TokenKind::LessThan)
                 }
-            },
+            }
             '{' => Some(TokenKind::OpenBrace),
             '}' => Some(TokenKind::CloseBrace),
             '(' => Some(TokenKind::OpenParen),

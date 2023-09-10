@@ -109,7 +109,9 @@ impl Source {
     }
 
     fn is_next_char_whitespace(&mut self) -> bool {
-        let Some(ch) = self.peek() else { return false; };
+        let Some(ch) = self.peek() else {
+            return false;
+        };
         ch.is_ascii_whitespace()
     }
 

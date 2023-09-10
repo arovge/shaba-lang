@@ -56,7 +56,9 @@ impl Lexer {
             return Ok(lexme);
         }
 
-        let Some(lexme) = self.source.next() else { return Ok(None) };
+        let Some(lexme) = self.source.next() else {
+            return Ok(None);
+        };
         Err(TokenizeError::UnknownLexme { lexme })
     }
 

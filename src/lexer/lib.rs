@@ -23,7 +23,7 @@ impl Lexer {
             tokens.push(token);
         }
 
-        return Ok(tokens);
+        Ok(tokens)
     }
 
     fn next_token(&mut self) -> Result<Option<Token>, LexerError> {
@@ -41,24 +41,32 @@ impl Lexer {
     }
 
     fn next_token_kind(&mut self) -> Result<Option<TokenKind>, TokenizeError> {
-        let token_kind = self
-            .read_single_char_token()
-            .or(self.read_literal()?)
-            .or(self.read_lexme());
-
-        if token_kind.is_some() {
-            return Ok(token_kind);
+        let single_char_token = self.read_single_char_token();
+        if single_char_token.is_some() {
+            return Ok(single_char_token);
         }
 
-        let Some(lexme) = self.source.next() else { return Ok(None) };
-        return Err(TokenizeError::UnknownLexme { lexme });
+        let literal = self.read_literal()?;
+        if literal.is_some() {
+            return Ok(literal);
+        }
+
+        let lexme = self.read_lexme();
+        if lexme.is_some() {
+            return Ok(lexme);
+        }
+
+        let Some(lexme) = self.source.next() else {
+            return Ok(None);
+        };
+        Err(TokenizeError::UnknownLexme { lexme })
     }
 
     fn read_lexme(&mut self) -> Option<TokenKind> {
-        let ch = self.source.next_if(|ch| is_start_of_identifier(ch))?;
+        let ch = self.source.next_if(is_start_of_identifier)?;
 
         let mut chars: Vec<char> = vec![ch];
-        while let Some(ch) = self.source.next_if(|ch| is_identifier(ch)) {
+        while let Some(ch) = self.source.next_if(is_identifier) {
             chars.push(ch);
         }
         let lexme = String::from_iter(chars);
@@ -69,47 +77,32 @@ impl Lexer {
             "var" => TokenKind::Keyword(Keyword::Var),
             _ => TokenKind::Identifier(lexme.to_string()),
         };
-        return Some(token_kind);
+        Some(token_kind)
     }
 
     fn read_single_char_token(&mut self) -> Option<TokenKind> {
-        let ch = self.source.peek()?;
-        let token = match ch {
-            '=' => Some(TokenKind::Equals),
-            '+' => Some(TokenKind::Plus),
-            '-' => Some(TokenKind::Minus),
-            '*' => Some(TokenKind::Asterisk),
-            '/' => Some(TokenKind::Slash),
-            '>' => {
-                if self.source.peek_next() == Some('=') {
-                    Some(TokenKind::GreaterThanEqual)
-                } else {
-                    Some(TokenKind::GreaterThan)
-                }
+        let token_kind = self.source.next_map(TokenKind::from_char)?;
+
+        let is_maybe_double_char_token = matches!(token_kind, TokenKind::Eq)
+            || matches!(token_kind, TokenKind::GreaterThan)
+            || matches!(token_kind, TokenKind::LessThan)
+            || matches!(token_kind, TokenKind::Negate);
+
+        if !is_maybe_double_char_token {
+            return Some(token_kind);
+        }
+
+        if self.source.next_if(|x| x == '=').is_some() {
+            match token_kind {
+                TokenKind::Eq => Some(TokenKind::EqEq),
+                TokenKind::GreaterThan => Some(TokenKind::GreaterThanEq),
+                TokenKind::LessThan => Some(TokenKind::LessThanEq),
+                TokenKind::Negate => Some(TokenKind::NotEq),
+                _ => Some(token_kind),
             }
-            '<' => {
-                if self.source.peek_next() == Some('=') {
-                    Some(TokenKind::LessThanEqual)
-                } else {
-                    Some(TokenKind::LessThan)
-                }
-            }
-            '{' => Some(TokenKind::OpenBrace),
-            '}' => Some(TokenKind::CloseBrace),
-            '(' => Some(TokenKind::OpenParen),
-            ')' => Some(TokenKind::CloseParen),
-            '[' => Some(TokenKind::OpenBracket),
-            ']' => Some(TokenKind::CloseBracket),
-            ',' => Some(TokenKind::Comma),
-            ';' => Some(TokenKind::Semicolon),
-            ':' => Some(TokenKind::Colon),
-            '.' => Some(TokenKind::Period),
-            '?' => Some(TokenKind::QuestionMark),
-            '!' => Some(TokenKind::ExclaimationPoint),
-            _ => None,
-        }?;
-        self.source.next();
-        return token.into();
+        } else {
+            Some(token_kind)
+        }
     }
 
     fn read_literal(&mut self) -> Result<Option<TokenKind>, TokenizeError> {
@@ -141,7 +134,7 @@ impl Lexer {
         }
 
         self.source.next();
-        return Ok(Some(str));
+        Ok(Some(str))
     }
 
     fn read_number(&mut self) -> Option<Literal> {
@@ -150,7 +143,7 @@ impl Lexer {
             .take_while(|ch| ch.is_ascii_digit())?
             .parse::<i32>()
             .ok()?;
-        return Some(Literal::Integer(num));
+        Some(Literal::Int(num))
     }
 }
 

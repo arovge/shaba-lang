@@ -27,19 +27,29 @@ impl SourcePosition {
     pub fn new(line: usize, column: usize) -> Self {
         Self { line, column }
     }
+
+    pub fn line(&self) -> usize {
+        self.line
+    }
+
+    pub fn column(&self) -> usize {
+        self.column
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
-    Equals,
+    Eq,
     Plus,
     Minus,
     Asterisk,
     Slash,
+    NotEq,
     GreaterThan,
-    GreaterThanEqual,
+    GreaterThanEq,
+    EqEq,
     LessThan,
-    LessThanEqual,
+    LessThanEq,
     OpenBrace,
     CloseBrace,
     OpenParen,
@@ -51,16 +61,43 @@ pub enum TokenKind {
     Colon,
     Period,
     QuestionMark,
-    ExclaimationPoint,
+    Negate,
     Literal(Literal),
     Identifier(String),
     Keyword(Keyword),
 }
 
+impl TokenKind {
+    pub fn from_char(ch: char) -> Option<TokenKind> {
+        match ch {
+            '=' => Some(TokenKind::Eq),
+            '+' => Some(TokenKind::Plus),
+            '-' => Some(TokenKind::Minus),
+            '*' => Some(TokenKind::Asterisk),
+            '/' => Some(TokenKind::Slash),
+            '>' => Some(TokenKind::GreaterThan),
+            '<' => Some(TokenKind::LessThan),
+            '{' => Some(TokenKind::OpenBrace),
+            '}' => Some(TokenKind::CloseBrace),
+            '(' => Some(TokenKind::OpenParen),
+            ')' => Some(TokenKind::CloseParen),
+            '[' => Some(TokenKind::OpenBracket),
+            ']' => Some(TokenKind::CloseBracket),
+            ',' => Some(TokenKind::Comma),
+            ';' => Some(TokenKind::Semicolon),
+            ':' => Some(TokenKind::Colon),
+            '.' => Some(TokenKind::Period),
+            '?' => Some(TokenKind::QuestionMark),
+            '!' => Some(TokenKind::Negate),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
-    Integer(i32),
-    FloatingPoint(f32),
+    Int(i32),
+    Double(f32),
     Bool(bool),
     String(String),
 }

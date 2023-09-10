@@ -6,7 +6,7 @@ pub mod parser;
 #[cfg(test)]
 mod tests;
 
-use crate::{lexer::Lexer, parser::Parser};
+use crate::{lexer::lib::Lexer, parser::Parser};
 use error::ShabaCompilerError;
 
 fn main() -> Result<(), ShabaCompilerError> {

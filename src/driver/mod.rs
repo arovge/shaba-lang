@@ -1,4 +1,4 @@
-mod driver;
 pub mod error;
+mod lib;
 
-pub use driver::read_source;
+pub use lib::read_source;

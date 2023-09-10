@@ -23,7 +23,7 @@ impl Lexer {
             tokens.push(token);
         }
 
-        return Ok(tokens);
+        Ok(tokens)
     }
 
     fn next_token(&mut self) -> Result<Option<Token>, LexerError> {
@@ -57,14 +57,14 @@ impl Lexer {
         }
 
         let Some(lexme) = self.source.next() else { return Ok(None) };
-        return Err(TokenizeError::UnknownLexme { lexme });
+        Err(TokenizeError::UnknownLexme { lexme })
     }
 
     fn read_lexme(&mut self) -> Option<TokenKind> {
-        let ch = self.source.next_if(|ch| is_start_of_identifier(ch))?;
+        let ch = self.source.next_if(is_start_of_identifier)?;
 
         let mut chars: Vec<char> = vec![ch];
-        while let Some(ch) = self.source.next_if(|ch| is_identifier(ch)) {
+        while let Some(ch) = self.source.next_if(is_identifier) {
             chars.push(ch);
         }
         let lexme = String::from_iter(chars);
@@ -75,11 +75,11 @@ impl Lexer {
             "var" => TokenKind::Keyword(Keyword::Var),
             _ => TokenKind::Identifier(lexme.to_string()),
         };
-        return Some(token_kind);
+        Some(token_kind)
     }
 
     fn read_single_char_token(&mut self) -> Option<TokenKind> {
-        let token_kind = self.source.next_map(|x| TokenKind::from_char(x))?;
+        let token_kind = self.source.next_map(TokenKind::from_char)?;
 
         let is_maybe_double_char_token = matches!(token_kind, TokenKind::Eq)
             || matches!(token_kind, TokenKind::GreaterThan)
@@ -132,7 +132,7 @@ impl Lexer {
         }
 
         self.source.next();
-        return Ok(Some(str));
+        Ok(Some(str))
     }
 
     fn read_number(&mut self) -> Option<Literal> {
@@ -141,7 +141,7 @@ impl Lexer {
             .take_while(|ch| ch.is_ascii_digit())?
             .parse::<i32>()
             .ok()?;
-        return Some(Literal::Int(num));
+        Some(Literal::Int(num))
     }
 }
 

@@ -40,28 +40,28 @@ impl Source {
         }
 
         let str = String::from_iter(chars);
-        return Some(str);
+        Some(str)
     }
 
     pub fn advance_while(&mut self, condition: impl Fn(char) -> bool) {
-        while let Some(_) = self.next_if(&condition) {}
+        while self.next_if(&condition).is_some() {}
     }
 
     pub fn advance_past_next(&mut self, ch: char) {
         self.advance_while(|c| c != ch);
-        if let Some(_) = self.peek() {
+        if self.peek().is_some() {
             self.next();
         }
     }
 
     pub fn peek(&mut self) -> Option<char> {
         let ch = *self.chars.get(self.cursor)?;
-        return Some(ch);
+        Some(ch)
     }
 
     pub fn peek_next(&mut self) -> Option<char> {
         let ch = *self.chars.get(self.cursor + 1)?;
-        return Some(ch);
+        Some(ch)
     }
 
     pub fn next_if(&mut self, condition: impl Fn(char) -> bool) -> Option<char> {
@@ -73,18 +73,15 @@ impl Source {
 
         self.increment_cursor(next);
 
-        return Some(next);
+        Some(next)
     }
 
     pub fn next_map<T>(&mut self, map: impl Fn(char) -> Option<T>) -> Option<T> {
         let next = *self.chars.get(self.cursor)?;
         let result = map(next);
-        if result.is_none() {
-            return None;
+        if result.is_some() {
+            self.increment_cursor(next);
         }
-
-        self.increment_cursor(next);
-
         result
     }
 
@@ -93,12 +90,7 @@ impl Source {
 
         self.increment_cursor(next);
 
-        return Some(next);
-    }
-
-    pub fn back(&mut self) {
-        let prev = *self.chars.get(self.cursor - 1).unwrap();
-        self.decrement_cursor(prev);
+        Some(next)
     }
 
     fn increment_cursor(&mut self, ch: char) {
@@ -112,24 +104,13 @@ impl Source {
         self.cursor += 1;
     }
 
-    fn decrement_cursor(&mut self, ch: char) {
-        if ch == '\n' {
-            self.line_position -= 1;
-            self.column_position = 1;
-        } else {
-            self.column_position -= 1;
-        }
-
-        self.cursor -= 1;
-    }
-
     fn is_at_start_of_comment(&mut self) -> bool {
         self.peek() == Some('/') && self.peek_next() == Some('/')
     }
 
     fn is_next_char_whitespace(&mut self) -> bool {
         let Some(ch) = self.peek() else { return false; };
-        return ch.is_ascii_whitespace();
+        ch.is_ascii_whitespace()
     }
 
     fn advance_to_next_line(&mut self) {

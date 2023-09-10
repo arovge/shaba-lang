@@ -2,8 +2,8 @@ use std::iter::zip;
 
 use crate::lexer::{
     error::LexerError,
+    lib::Lexer,
     token::{Keyword, Literal, SourcePosition, Token, TokenKind},
-    Lexer,
 };
 
 #[test]

@@ -33,7 +33,7 @@ jobs:
       uses: moonrepo/setup-rust@v0
       with:
         components: clippy
-    - name: Tests
+    - name: Lint
       run: |
         cargo clippy -- -Dwarnings
   fmt:
@@ -46,6 +46,6 @@ jobs:
       uses: moonrepo/setup-rust@v0
       with:
         components: rustfmt
-    - name: Tests
+    - name: Fmt
       run: |
         cargo fmt --check

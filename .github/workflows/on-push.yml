@@ -1,0 +1,51 @@
+on:
+  push
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install toolchain
+      uses: moonrepo/setup-rust@v0
+    - name: Build
+      run: |
+        cargo build
+  tests:
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install toolchain
+      uses: moonrepo/setup-rust@v0
+    - name: Tests
+      run: |
+        cargo test
+  lint:
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install toolchain
+      uses: moonrepo/setup-rust@v0
+      with:
+        components: clippy
+    - name: Tests
+      run: |
+        cargo clippy
+  fmt:
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install toolchain
+      uses: moonrepo/setup-rust@v0
+      with:
+        components: rustfmt
+    - name: Tests
+      run: |
+        cargo fmt --check

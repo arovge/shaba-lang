@@ -1,4 +1,15 @@
+use crate::lexer::token::SourcePosition;
+
 #[derive(Debug)]
 pub enum ParserError {
-    Unknown,
+    ExpectedToken {
+        // source_position: SourcePosition,
+        expected_token: ExpectedToken,
+    },
+    Unknown(String),
+}
+
+#[derive(Debug)]
+pub enum ExpectedToken {
+    ClosingParen,
 }

@@ -2,8 +2,8 @@ use std::iter::zip;
 
 use crate::lexer::{
     error::LexerError,
+    lib::Lexer,
     token::{Keyword, Literal, SourcePosition, Token, TokenKind},
-    Lexer,
 };
 
 #[test]
@@ -57,7 +57,7 @@ fn tokenizes_empty_str() {
             SourcePosition::new(2, 20),
         ),
         Token::new(
-            TokenKind::Equals,
+            TokenKind::Eq,
             SourcePosition::new(2, 21),
             SourcePosition::new(2, 22),
         ),
@@ -65,6 +65,122 @@ fn tokenizes_empty_str() {
             TokenKind::Literal(Literal::String(String::from(""))),
             SourcePosition::new(2, 23),
             SourcePosition::new(2, 25),
+        ),
+    ];
+
+    assert_tokens_eq(result, expected);
+}
+
+#[test]
+fn tokenizes_greater_than_eq() {
+    let source = r#"
+        18 >= 18
+    "#;
+    let mut lexer = Lexer::new(source);
+    let result = lexer.tokenize().unwrap();
+
+    let expected = vec![
+        Token::new(
+            Literal::Int(18).into(),
+            SourcePosition::new(2, 9),
+            SourcePosition::new(2, 11),
+        ),
+        Token::new(
+            TokenKind::GreaterThanEq,
+            SourcePosition::new(2, 12),
+            SourcePosition::new(2, 14),
+        ),
+        Token::new(
+            Literal::Int(18).into(),
+            SourcePosition::new(2, 15),
+            SourcePosition::new(2, 17),
+        ),
+    ];
+
+    assert_tokens_eq(result, expected);
+}
+
+#[test]
+fn tokenizes_less_than_eq() {
+    let source = r#"
+        14 <= 18
+    "#;
+    let mut lexer = Lexer::new(source);
+    let result = lexer.tokenize().unwrap();
+
+    let expected = vec![
+        Token::new(
+            Literal::Int(14).into(),
+            SourcePosition::new(2, 9),
+            SourcePosition::new(2, 11),
+        ),
+        Token::new(
+            TokenKind::LessThanEq,
+            SourcePosition::new(2, 12),
+            SourcePosition::new(2, 14),
+        ),
+        Token::new(
+            Literal::Int(18).into(),
+            SourcePosition::new(2, 15),
+            SourcePosition::new(2, 17),
+        ),
+    ];
+
+    assert_tokens_eq(result, expected);
+}
+
+#[test]
+fn tokenizes_not_eq() {
+    let source = r#"
+        0 != 1
+    "#;
+    let mut lexer = Lexer::new(source);
+    let result = lexer.tokenize().unwrap();
+
+    let expected = vec![
+        Token::new(
+            Literal::Int(0).into(),
+            SourcePosition::new(2, 9),
+            SourcePosition::new(2, 10),
+        ),
+        Token::new(
+            TokenKind::NotEq,
+            SourcePosition::new(2, 11),
+            SourcePosition::new(2, 13),
+        ),
+        Token::new(
+            Literal::Int(1).into(),
+            SourcePosition::new(2, 14),
+            SourcePosition::new(2, 15),
+        ),
+    ];
+
+    assert_tokens_eq(result, expected);
+}
+
+#[test]
+fn tokenizes_eq_eq() {
+    let source = r#"
+        1 == 1
+    "#;
+    let mut lexer = Lexer::new(source);
+    let result = lexer.tokenize().unwrap();
+
+    let expected = vec![
+        Token::new(
+            Literal::Int(1).into(),
+            SourcePosition::new(2, 9),
+            SourcePosition::new(2, 10),
+        ),
+        Token::new(
+            TokenKind::EqEq,
+            SourcePosition::new(2, 11),
+            SourcePosition::new(2, 13),
+        ),
+        Token::new(
+            Literal::Int(1).into(),
+            SourcePosition::new(2, 14),
+            SourcePosition::new(2, 15),
         ),
     ];
 
@@ -116,7 +232,7 @@ fn tokenizes_skips_whitespace_and_comments() {
             SourcePosition::new(7, 19),
         ),
         Token::new(
-            TokenKind::Equals,
+            TokenKind::Eq,
             SourcePosition::new(7, 20),
             SourcePosition::new(7, 21),
         ),
@@ -150,7 +266,7 @@ fn tokenizes_literal_bool() {
             SourcePosition::new(2, 25),
         ),
         Token::new(
-            TokenKind::Equals,
+            TokenKind::Eq,
             SourcePosition::new(2, 26),
             SourcePosition::new(2, 27),
         ),
@@ -201,12 +317,12 @@ fn tokenizes_literal_integer() {
             SourcePosition::new(2, 16),
         ),
         Token::new(
-            TokenKind::Equals,
+            TokenKind::Eq,
             SourcePosition::new(2, 17),
             SourcePosition::new(2, 18),
         ),
         Token::new(
-            TokenKind::Literal(Literal::Integer(24)),
+            TokenKind::Literal(Literal::Int(24)),
             SourcePosition::new(2, 19),
             SourcePosition::new(2, 21),
         ),
@@ -239,7 +355,7 @@ fn tokenizes_snippet() {
             SourcePosition::new(2, 16),
         ),
         Token::new(
-            TokenKind::Equals,
+            TokenKind::Eq,
             SourcePosition::new(2, 17),
             SourcePosition::new(2, 18),
         ),
@@ -279,12 +395,12 @@ fn tokenizes_snippet() {
             SourcePosition::new(5, 16),
         ),
         Token::new(
-            TokenKind::Equals,
+            TokenKind::Eq,
             SourcePosition::new(5, 17),
             SourcePosition::new(5, 18),
         ),
         Token::new(
-            Literal::Integer(1).into(),
+            Literal::Int(1).into(),
             SourcePosition::new(5, 19),
             SourcePosition::new(5, 20),
         ),
@@ -294,7 +410,7 @@ fn tokenizes_snippet() {
             SourcePosition::new(5, 22),
         ),
         Token::new(
-            Literal::Integer(1).into(),
+            Literal::Int(1).into(),
             SourcePosition::new(5, 23),
             SourcePosition::new(5, 24),
         ),
@@ -309,7 +425,7 @@ fn tokenizes_snippet() {
             SourcePosition::new(6, 33),
         ),
         Token::new(
-            TokenKind::Equals,
+            TokenKind::Eq,
             SourcePosition::new(6, 34),
             SourcePosition::new(6, 35),
         ),
@@ -324,7 +440,7 @@ fn tokenizes_snippet() {
             SourcePosition::new(6, 41),
         ),
         Token::new(
-            Literal::Integer(0).into(),
+            Literal::Int(0).into(),
             SourcePosition::new(6, 42),
             SourcePosition::new(6, 43),
         ),
@@ -334,9 +450,13 @@ fn tokenizes_snippet() {
 }
 
 fn assert_tokens_eq(result: Vec<Token>, expected: Vec<Token>) {
-    assert_eq!(result.len(), expected.len());
-
-    for (actual_token, expected_token) in zip(result, expected) {
-        assert_eq!(actual_token, expected_token);
+    for (actual_token, expected_token) in zip(&result, &expected) {
+        if actual_token != expected_token {
+            panic!(
+                "\n\nExpected:\n{:?}\nActual:\n{:?}\n\n",
+                expected_token, actual_token
+            );
+        }
     }
+    assert_eq!(result.len(), expected.len());
 }

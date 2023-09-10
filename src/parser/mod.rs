@@ -1,5 +1,4 @@
 mod ast;
 pub mod error;
-mod parser;
-
-pub use parser::Parser;
+mod lib;
+pub use lib::Parser;

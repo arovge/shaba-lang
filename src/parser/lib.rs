@@ -2,8 +2,7 @@ use super::{
     ast::{Cmp, Node, Operator},
     error::ParserError,
 };
-use crate::lexer::token::TokenKind as LexerTokenKind;
-use crate::lexer::token::{Keyword, Token};
+use crate::lexer::token::{Keyword, Token, TokenKind};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -21,12 +20,13 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Vec<Node>, ParserError> {
-        println!("{:?}", self.tokens);
         let mut statements = Vec::new();
-        while self.is_not_at_eof() {
-            if let Some(exp) = self.declaration() {
-                statements.push(exp);
-            }
+        while let Some(exp) = self.declaration() {
+            statements.push(exp);
+            println!("{:?}", statements);
+        }
+        if self.is_not_at_eof() {
+            panic!("Expected to be at end of tokens. But was not.");
         }
         Ok(statements)
     }
@@ -49,21 +49,21 @@ impl Parser {
         self.expression()
     }
 
+    fn var_decl(&mut self) -> Option<Node> {
+        None
+    }
+
     fn expression(&mut self) -> Option<Node> {
         self.equality()
     }
 
-    // TODO: make sure next
     fn equality(&mut self) -> Option<Node> {
         let mut expression = self.comparison()?;
 
-        let current = self.next_if(|x| matches!(x.kind(), LexerTokenKind::Eq));
-        if let Some(_eq) = current {
-            // TOOD: not equal
-            let operator = self.peek_previous().unwrap().as_operator().unwrap();
+        if let Some(cmp) = self.next_if_cmp() {
             let rhs = self.comparison().unwrap();
             expression = Node::BinaryExpression {
-                op: operator,
+                op: Operator::Cmp(cmp),
                 lhs: Box::new(expression),
                 rhs: Box::new(rhs),
             };
@@ -76,12 +76,10 @@ impl Parser {
     fn comparison(&mut self) -> Option<Node> {
         let mut expression = self.term()?;
 
-        while let Some(_cmp) = self.next_if_cmp() {
-            // TOOD: greater equal, less, less equal
-            let operator = self.peek_previous().unwrap().as_operator().unwrap();
+        while let Some(cmp) = self.next_if_cmp() {
             let rhs = self.term().unwrap();
             expression = Node::BinaryExpression {
-                op: operator,
+                op: Operator::Cmp(cmp),
                 lhs: Box::new(expression),
                 rhs: Box::new(rhs),
             };
@@ -108,12 +106,7 @@ impl Parser {
     fn factor(&mut self) -> Option<Node> {
         let mut expression = self.unary_expression()?;
 
-        let current = self.next().unwrap().kind().clone();
-        while matches!(current, LexerTokenKind::Asterisk)
-            || matches!(current, LexerTokenKind::Slash)
-        {
-            // TODO: Wtf is an operator at this point
-            let operator = self.peek_previous().unwrap().as_operator().unwrap();
+        while let Some(operator) = self.next_if_operator() {
             let rhs = self.unary_expression().unwrap();
             expression = Node::BinaryExpression {
                 op: operator,
@@ -144,13 +137,12 @@ impl Parser {
     }
 
     fn primary(&mut self) -> Option<Node> {
-        println!("prim");
         let literal = self.next_if_literal_node();
         if literal.is_some() {
             return literal;
         }
         let exp = self.expression();
-        let closing_paren = self.next_if(|x| matches!(x.kind(), LexerTokenKind::CloseParen));
+        let closing_paren = self.next_if(|x| matches!(x.kind(), TokenKind::CloseParen));
         if closing_paren.is_none() {
             self.errors.push(ParserError::ExpectedToken {
                 expected_token: super::error::ExpectedToken::ClosingParen,
@@ -166,14 +158,14 @@ impl Parser {
                 return;
             };
             let prev_kind = prev.kind();
-            if matches!(prev_kind, LexerTokenKind::Semicolon) {
+            if matches!(prev_kind, TokenKind::Semicolon) {
                 return;
             }
             let Some(current) = self.peek() else {
                 return;
             };
             let current_kind = current.kind();
-            if matches!(current_kind, LexerTokenKind::Keyword(_)) {
+            if matches!(current_kind, TokenKind::Keyword(_)) {
                 return;
             }
             self.increment_cursor();

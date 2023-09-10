@@ -5,7 +5,7 @@ declaration → varDecl | statement ;
 statement → exprStmt | printStmt ;
 varDecl → "let" IDENTIFIER ( "=" expression )? ";" ;
 
-expression → equality ;
+expression → equality | assignment;
 equality → comparison ( ( "!=" | "==" ) comparison )* ;
 comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term → factor ( ( "-" | "+" ) factor )* ;

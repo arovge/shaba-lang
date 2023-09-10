@@ -5,6 +5,9 @@ pub enum Operator {
     Plus,
     Minus,
     Negate,
+    Slash,
+    Asterisk,
+    Cmp(Cmp)
 }
 
 #[derive(Debug)]
@@ -67,6 +70,8 @@ impl Token {
             TokenKind::Plus => Some(Operator::Plus),
             TokenKind::Minus => Some(Operator::Minus),
             TokenKind::Negate => Some(Operator::Negate),
+            TokenKind::Slash => Some(Operator::Slash),
+            TokenKind::Asterisk => Some(Operator::Asterisk),
             _ => None,
         }
     }

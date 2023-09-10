@@ -14,9 +14,10 @@ fn main() -> Result<(), ShabaCompilerError> {
     let mut lexer = Lexer::new(source.as_str());
     let tokens = lexer.tokenize()?;
 
-    dbg!(tokens.clone());
+    let mut parser = Parser::new(tokens);
+    let ast = parser.parse()?;
 
-    let mut _parser = Parser::new(tokens);
+    println!("{:?}", ast);
 
     Ok(())
 }

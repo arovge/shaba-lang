@@ -1,6 +1,5 @@
-use std::{env, fs};
-
 use crate::driver::error::DriverError;
+use std::{env, fs};
 
 pub fn read_source() -> Result<String, DriverError> {
     let Some(file_path) = get_file_flag() else {

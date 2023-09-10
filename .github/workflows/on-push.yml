@@ -35,7 +35,7 @@ jobs:
         components: clippy
     - name: Tests
       run: |
-        cargo clippy
+        cargo clippy -- -Dwarnings
   fmt:
     needs: build
     runs-on: ubuntu-22.04

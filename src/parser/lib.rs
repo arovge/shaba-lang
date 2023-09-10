@@ -1,13 +1,14 @@
 use super::{
     ast::{Cmp, Node, Operator},
-    error::ParserError,
+    error::{ParserError, ParsingError},
 };
 use crate::lexer::token::{Keyword, Token, TokenKind};
+use super::error::ExpectedToken;
 
 pub struct Parser {
     tokens: Vec<Token>,
     cursor: usize,
-    errors: Vec<ParserError>,
+    errors: Vec<ParsingError>,
 }
 
 impl Parser {
@@ -27,6 +28,9 @@ impl Parser {
         }
         if self.is_not_at_eof() {
             panic!("Expected to be at end of tokens. But was not.");
+        }
+        if self.errors.len() > 0 {
+            return Err(ParserError::new(self.errors.clone()));
         }
         Ok(statements)
     }
@@ -144,9 +148,7 @@ impl Parser {
         let exp = self.expression();
         let closing_paren = self.next_if(|x| matches!(x.kind(), TokenKind::CloseParen));
         if closing_paren.is_none() {
-            self.errors.push(ParserError::ExpectedToken {
-                expected_token: super::error::ExpectedToken::ClosingParen,
-            });
+            self.errors.push(ParsingError::ExpectedToken(ExpectedToken::ClosingParen));
         }
         exp
     }
@@ -154,25 +156,25 @@ impl Parser {
     fn synchronize(&mut self) {
         self.increment_cursor();
         loop {
-            let Some(prev) = self.peek_previous() else {
-                return;
+            let Some(prev) = self.peek_prev() else {
+                break;
             };
             let prev_kind = prev.kind();
             if matches!(prev_kind, TokenKind::Semicolon) {
-                return;
+                break;
             }
             let Some(current) = self.peek() else {
-                return;
+                break;
             };
             let current_kind = current.kind();
             if matches!(current_kind, TokenKind::Keyword(_)) {
-                return;
+                break;
             }
             self.increment_cursor();
         }
     }
 
-    fn peek_previous(&self) -> Option<&Token> {
+    fn peek_prev(&self) -> Option<&Token> {
         self.tokens.get(self.cursor - 1)
     }
 
@@ -194,19 +196,18 @@ impl Parser {
 
     fn next(&mut self) -> Option<Token> {
         self.increment_cursor();
-        self.tokens.get(self.cursor - 1)?.clone().into()
+        self.peek_prev()?.clone().into()
     }
 
     fn next_if(&mut self, condition: impl Fn(&Token) -> bool) -> Option<Token> {
+        self.next_map(|x| if condition(x) { Some(x.clone()) } else { None })
+    }
+
+    fn next_map<T>(&mut self, map: impl Fn(&Token) -> Option<T>) -> Option<T> {
         let next = self.tokens.get(self.cursor)?.clone();
-
-        if !condition(&next) {
-            return None;
-        }
-
+        let result = map(&next)?;
         self.increment_cursor();
-
-        Some(next)
+        Some(result)
     }
 
     fn next_if_operator(&mut self) -> Option<Operator> {
@@ -226,14 +227,11 @@ impl Parser {
     }
 
     fn next_while(&mut self, condition: impl Fn(&Token) -> bool) {
-        while self.next_if(&condition).is_some() {}
-    }
-
-    fn next_map<T>(&mut self, map: impl Fn(&Token) -> Option<T>) -> Option<T> {
-        let next = self.tokens.get(self.cursor)?.clone();
-        let result = map(&next)?;
-        self.increment_cursor();
-        Some(result)
+        loop {
+            if self.next_if(&condition).is_none() {
+                break;
+            }
+        }
     }
 
     fn next_if_cmp(&mut self) -> Option<Cmp> {
@@ -241,6 +239,6 @@ impl Parser {
     }
 
     fn is_not_at_eof(&self) -> bool {
-        self.tokens.get(self.cursor).is_some()
+        self.peek().is_some()
     }
 }

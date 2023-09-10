@@ -7,7 +7,7 @@ pub enum Operator {
     Negate,
     Slash,
     Asterisk,
-    Cmp(Cmp)
+    Cmp(Cmp),
 }
 
 #[derive(Debug)]

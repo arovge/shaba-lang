@@ -1,13 +1,24 @@
 #[derive(Debug)]
-pub enum ParserError {
-    ExpectedToken {
-        // source_position: SourcePosition,
-        expected_token: ExpectedToken,
-    },
-    Unknown(String),
+pub struct ParserError {
+    errors: Vec<ParsingError>
+    // source_position: SourcePosition
 }
 
-#[derive(Debug)]
+impl ParserError {
+    pub fn new(errors: Vec<ParsingError>) -> Self {
+        Self {
+            errors
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum ParsingError {
+    ExpectedToken(ExpectedToken),
+    Unknown(String)
+}
+
+#[derive(Debug, Clone)]
 pub enum ExpectedToken {
     ClosingParen,
 }

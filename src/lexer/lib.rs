@@ -1,5 +1,5 @@
 use super::{
-    error::{LexerError, TokenizeError},
+    error::{LexerError, LexingError},
     source::Source,
     token::{Keyword, Literal, TokenKind},
 };
@@ -40,7 +40,7 @@ impl Lexer {
         }
     }
 
-    fn next_token_kind(&mut self) -> Result<Option<TokenKind>, TokenizeError> {
+    fn next_token_kind(&mut self) -> Result<Option<TokenKind>, LexingError> {
         let single_char_token = self.read_single_char_token();
         if single_char_token.is_some() {
             return Ok(single_char_token);
@@ -59,7 +59,7 @@ impl Lexer {
         let Some(lexme) = self.source.next() else {
             return Ok(None);
         };
-        Err(TokenizeError::UnknownLexme { lexme })
+        Err(LexingError::UnknownLexme(lexme))
     }
 
     fn read_lexme(&mut self) -> Option<TokenKind> {
@@ -105,7 +105,7 @@ impl Lexer {
         }
     }
 
-    fn read_literal(&mut self) -> Result<Option<TokenKind>, TokenizeError> {
+    fn read_literal(&mut self) -> Result<Option<TokenKind>, LexingError> {
         if let Some(str) = self.read_str()? {
             let token_kind = TokenKind::Literal(Literal::String(str));
             return Ok(Some(token_kind));
@@ -117,7 +117,7 @@ impl Lexer {
         Ok(None)
     }
 
-    fn read_str(&mut self) -> Result<Option<String>, TokenizeError> {
+    fn read_str(&mut self) -> Result<Option<String>, LexingError> {
         let Some(_) = self.source.next_if(|ch| ch == '"') else {
             return Ok(None);
         };
@@ -130,7 +130,7 @@ impl Lexer {
         let is_unterminated = self.source.peek() != Some('"');
 
         if is_unterminated {
-            return Err(TokenizeError::UnterminatedString);
+            return Err(LexingError::UnterminatedString);
         }
 
         self.source.next();

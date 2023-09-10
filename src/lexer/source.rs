@@ -1,4 +1,4 @@
-use super::token::SourcePosition;
+use super::token::SourceLocation;
 
 pub struct Source {
     chars: Vec<char>,
@@ -18,8 +18,8 @@ impl Source {
         }
     }
 
-    pub fn position(&self) -> SourcePosition {
-        SourcePosition::new(self.line_position, self.column_position)
+    pub fn position(&self) -> SourceLocation {
+        SourceLocation::new(self.line_position, self.column_position)
     }
 
     pub fn advance_to_next_token(&mut self) {

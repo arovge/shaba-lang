@@ -3,10 +3,7 @@ use super::{
     error::ParserError,
 };
 use crate::lexer::token::TokenKind as LexerTokenKind;
-use crate::lexer::{
-    token::{Keyword, Literal, Token},
-    Lexer,
-};
+use crate::lexer::token::{Keyword, Token};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -61,7 +58,7 @@ impl Parser {
         let mut expression = self.comparison()?;
 
         let current = self.next_if(|x| matches!(x.kind(), LexerTokenKind::Eq));
-        if let Some(eq) = current {
+        if let Some(_eq) = current {
             // TOOD: not equal
             let operator = self.peek_previous().unwrap().as_operator().unwrap();
             let rhs = self.comparison().unwrap();
@@ -79,7 +76,7 @@ impl Parser {
     fn comparison(&mut self) -> Option<Node> {
         let mut expression = self.term()?;
 
-        while let Some(cmp) = self.next_if_cmp() {
+        while let Some(_cmp) = self.next_if_cmp() {
             // TOOD: greater equal, less, less equal
             let operator = self.peek_previous().unwrap().as_operator().unwrap();
             let rhs = self.term().unwrap();
@@ -143,7 +140,7 @@ impl Parser {
             op: operator,
             term: Box::new(term),
         };
-        return Some(node);
+        Some(node)
     }
 
     fn primary(&mut self) -> Option<Node> {
@@ -165,12 +162,16 @@ impl Parser {
     fn synchronize(&mut self) {
         self.increment_cursor();
         loop {
-            let Some(prev) = self.peek_previous() else { return; };
+            let Some(prev) = self.peek_previous() else {
+                return;
+            };
             let prev_kind = prev.kind();
             if matches!(prev_kind, LexerTokenKind::Semicolon) {
                 return;
             }
-            let Some(current) = self.peek() else { return; };
+            let Some(current) = self.peek() else {
+                return;
+            };
             let current_kind = current.kind();
             if matches!(current_kind, LexerTokenKind::Keyword(_)) {
                 return;
@@ -213,7 +214,7 @@ impl Parser {
 
         self.increment_cursor();
 
-        return Some(next);
+        Some(next)
     }
 
     fn next_if_operator(&mut self) -> Option<Operator> {
@@ -233,7 +234,7 @@ impl Parser {
     }
 
     fn next_while(&mut self, condition: impl Fn(&Token) -> bool) {
-        while let Some(_) = self.next_if(&condition) {}
+        while self.next_if(&condition).is_some() {}
     }
 
     fn next_map<T>(&mut self, map: impl Fn(&Token) -> Option<T>) -> Option<T> {

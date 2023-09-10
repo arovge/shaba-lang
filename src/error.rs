@@ -4,25 +4,25 @@ use crate::parser::error::ParserError;
 
 #[derive(Debug)]
 pub enum ShabaCompilerError {
-    DriverError(DriverError),
-    LexerError(LexerError),
-    ParserError(ParserError),
+    Driver(DriverError),
+    Lexer(LexerError),
+    Parser(ParserError),
 }
 
 impl From<DriverError> for ShabaCompilerError {
     fn from(e: DriverError) -> ShabaCompilerError {
-        ShabaCompilerError::DriverError(e)
+        ShabaCompilerError::Driver(e)
     }
 }
 
 impl From<LexerError> for ShabaCompilerError {
     fn from(e: LexerError) -> ShabaCompilerError {
-        ShabaCompilerError::LexerError(e)
+        ShabaCompilerError::Lexer(e)
     }
 }
 
 impl From<ParserError> for ShabaCompilerError {
     fn from(e: ParserError) -> ShabaCompilerError {
-        ShabaCompilerError::ParserError(e)
+        ShabaCompilerError::Parser(e)
     }
 }

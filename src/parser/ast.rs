@@ -18,8 +18,8 @@ pub enum Cmp {
 
 #[derive(Debug)]
 pub enum Node {
-    Integer(i32),
-    FloatingPoint(f32),
+    Int(i32),
+    Double(f32),
     String(String),
     Bool(bool),
     VarDecl {
@@ -54,8 +54,8 @@ impl Token {
             return None;
         };
         let node = match literal {
-            Literal::Integer(n) => Node::Integer(*n),
-            Literal::FloatingPoint(n) => Node::FloatingPoint(*n),
+            Literal::Int(n) => Node::Int(*n),
+            Literal::Double(n) => Node::Double(*n),
             Literal::Bool(n) => Node::Bool(*n),
             Literal::String(n) => Node::String(n.clone()),
         };
@@ -66,7 +66,7 @@ impl Token {
         match self.kind() {
             TokenKind::Plus => Some(Operator::Plus),
             TokenKind::Minus => Some(Operator::Minus),
-            TokenKind::ExclaimationPoint => Some(Operator::Negate),
+            TokenKind::Negate => Some(Operator::Negate),
             _ => None,
         }
     }

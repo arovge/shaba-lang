@@ -85,12 +85,29 @@ impl Source {
         result
     }
 
+    pub fn next_map<T>(&mut self, map: impl Fn(char) -> Option<T>) -> Option<T> {
+        let next = *self.chars.get(self.cursor)?;
+        let result = map(next);
+        if result.is_none() {
+            return None;
+        }
+
+        self.increment_cursor(next);
+
+        result
+    }
+
     pub fn next(&mut self) -> Option<char> {
         let next = *self.chars.get(self.cursor)?;
 
         self.increment_cursor(next);
 
         Some(next)
+    }
+
+    pub fn back(&mut self) {
+        let prev = *self.chars.get(self.cursor - 1).unwrap();
+        self.decrement_cursor(prev);
     }
 
     fn increment_cursor(&mut self, ch: char) {
@@ -102,6 +119,17 @@ impl Source {
         }
 
         self.cursor += 1;
+    }
+
+    fn decrement_cursor(&mut self, ch: char) {
+        if ch == '\n' {
+            self.line_position -= 1;
+            self.column_position = 1;
+        } else {
+            self.column_position -= 1;
+        }
+
+        self.cursor -= 1;
     }
 
     fn is_at_start_of_comment(&mut self) -> bool {

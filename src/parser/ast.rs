@@ -28,6 +28,10 @@ pub enum Node {
     VarDecl {
         identifier: String,
     },
+    LetDecl {
+        identifier: String,
+        expression: Expr,
+    },
     Identifier(String),
     UnaryExpression {
         op: Operator,
@@ -38,6 +42,35 @@ pub enum Node {
         lhs: Box<Node>,
         rhs: Box<Node>,
     },
+}
+
+#[derive(Debug)]
+pub enum Expr {
+    UnaryExpr {
+        op: UnaryOp,
+        expr: Box<Expr>,
+    },
+    BinaryExpr {
+        op: Operator,
+        lhs: Box<Node>,
+        rhs: Box<Node>,
+    },
+}
+
+#[derive(Debug)]
+pub enum UnaryOp {
+    Minus,
+    Negate
+}
+
+impl UnaryOp {
+    pub fn from(token: &Token) -> Option<UnaryOp> {
+        match token.kind() {
+            TokenKind::Minus => UnaryOp::Minus.into(),
+            TokenKind::Negate => UnaryOp::Negate.into(),
+            _ => None
+        }
+    }
 }
 
 impl Token {

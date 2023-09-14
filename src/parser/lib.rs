@@ -1,5 +1,5 @@
 use super::{
-    ast::{Cmp, Node, Operator},
+    ast::{Cmp, Node, Operator, Expr, UnaryOp},
     error::{ParserError, ParsingError},
 };
 use crate::lexer::token::{Keyword, Token, TokenKind};
@@ -33,6 +33,38 @@ impl Parser {
             return Err(ParserError::new(self.errors.clone()));
         }
         Ok(statements)
+    }
+
+    // TODO: everything below is BAD
+
+    fn let_decl(&mut self) -> Option<Node> {
+        let _keyword = self.next_if_keyword()?;
+        let identifier = self.next_if_identifier()
+            .expect("Expected identifier");
+        self.next_if(|x| *x.kind() == TokenKind::Eq)
+            .expect("Expected = in let decl");
+        let expression = self.expr2()
+            .expect("Expected expression after `let <ident> = `");
+        Some(Node::LetDecl {
+            identifier,
+            expression
+        })
+    }
+
+    fn expr2(&mut self) -> Option<Expr> {
+        self.unary_expr2()
+        // TODO: More expr types
+    }
+
+    fn if_expr() -> Option<Node> {
+        None
+    }
+
+    fn unary_expr2(&mut self) -> Option<Expr> {
+        let op = self.next_map(|x| UnaryOp::from(x))?;
+        let expr = self.expr2()
+            .expect("Expected expr after unary op");
+        Expr::UnaryExpr { op, expr: Box::new(expr) }.into()
     }
 
     fn declaration(&mut self) -> Option<Node> {

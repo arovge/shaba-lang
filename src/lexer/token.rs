@@ -3,13 +3,13 @@ use std::ops::Range;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     kind: TokenKind,
-    position: Range<SourcePosition>,
+    location: Range<SourceLocation>,
 }
 
 impl Token {
-    pub fn new(kind: TokenKind, start: SourcePosition, end: SourcePosition) -> Self {
-        let position = start..end;
-        Self { kind, position }
+    pub fn new(kind: TokenKind, start: SourceLocation, end: SourceLocation) -> Self {
+        let location = start..end;
+        Self { kind, location }
     }
 
     pub fn kind(&self) -> &TokenKind {
@@ -18,12 +18,12 @@ impl Token {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct SourcePosition {
+pub struct SourceLocation {
     line: usize,
     column: usize,
 }
 
-impl SourcePosition {
+impl SourceLocation {
     pub fn new(line: usize, column: usize) -> Self {
         Self { line, column }
     }

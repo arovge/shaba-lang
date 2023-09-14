@@ -1,28 +1,24 @@
-use super::token::SourcePosition;
+use super::token::SourceLocation;
 use std::ops::Range;
 
 #[derive(Debug, PartialEq)]
-pub enum LexerError {
-    UnterminatedString {
-        position: Range<SourcePosition>,
-    },
-    UnknownLexme {
-        position: Range<SourcePosition>,
-        lexme: char,
-    },
+pub struct LexerError {
+    error: TokenizeError,
+    location: Range<SourceLocation>,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum TokenizeError {
     UnterminatedString,
-    UnknownLexme { lexme: char },
+    UnknownLexme(char),
 }
 
 impl TokenizeError {
-    pub fn lexer_err(self, start: SourcePosition, end: SourcePosition) -> LexerError {
-        let position = start..end;
-        match self {
-            TokenizeError::UnterminatedString => LexerError::UnterminatedString { position },
-            TokenizeError::UnknownLexme { lexme } => LexerError::UnknownLexme { position, lexme },
+    pub fn into_lexer_err(self, start: SourceLocation, end: SourceLocation) -> LexerError {
+        let location = start..end;
+        LexerError {
+            error: self,
+            location,
         }
     }
 }

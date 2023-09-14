@@ -29,14 +29,14 @@ impl Lexer {
     fn next_token(&mut self) -> Result<Option<Token>, LexerError> {
         self.source.advance_to_next_token();
 
-        let start = self.source.position();
+        let start = self.source.location();
         let next_token_kind = self.next_token_kind();
-        let end = self.source.position();
+        let end = self.source.location();
 
         match next_token_kind {
             Ok(Some(token_kind)) => Ok(Some(Token::new(token_kind, start, end))),
             Ok(None) => Ok(None),
-            Err(e) => Err(e.lexer_err(start, end)),
+            Err(e) => Err(e.into_lexer_err(start, end)),
         }
     }
 
@@ -59,7 +59,7 @@ impl Lexer {
         let Some(lexme) = self.source.next() else {
             return Ok(None);
         };
-        Err(TokenizeError::UnknownLexme { lexme })
+        Err(TokenizeError::UnknownLexme(lexme))
     }
 
     fn read_lexme(&mut self) -> Option<TokenKind> {

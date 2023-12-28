@@ -124,7 +124,7 @@ impl Lexer {
         Ok(None)
     }
 
-    fn read_str(&mut self) -> Result<Option<String>, TokenizeError> {
+    fn read_str(&mut self) -> Result<Option<String>, LexingError> {
         if self.source.next_if(|ch| ch == '"').is_none() {
             return Ok(None);
         }

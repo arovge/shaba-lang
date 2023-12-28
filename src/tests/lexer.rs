@@ -1,9 +1,9 @@
-use std::iter::zip;
 use crate::lexer::{
     error::{LexerError, LexingError},
     lib::Lexer,
     token::{Keyword, Literal, SourceLocation, Token, TokenKind},
 };
+use std::iter::zip;
 
 #[test]
 fn tokenizes_unterminated_str() {

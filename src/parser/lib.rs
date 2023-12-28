@@ -1,9 +1,9 @@
+use super::error::ExpectedToken;
 use super::{
-    ast::{Cmp, Node, Operator, Expr, UnaryOp},
+    ast::{Cmp, Expr, Node, Operator, UnaryOp},
     error::{ParserError, ParsingError},
 };
 use crate::lexer::token::{Keyword, Token, TokenKind};
-use super::error::ExpectedToken;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -39,15 +39,15 @@ impl Parser {
 
     fn let_decl(&mut self) -> Option<Node> {
         let _keyword = self.next_if_keyword()?;
-        let identifier = self.next_if_identifier()
-            .expect("Expected identifier");
+        let identifier = self.next_if_identifier().expect("Expected identifier");
         self.next_if(|x| *x.kind() == TokenKind::Eq)
             .expect("Expected = in let decl");
-        let expression = self.expr2()
+        let expression = self
+            .expr2()
             .expect("Expected expression after `let <ident> = `");
         Some(Node::LetDecl {
             identifier,
-            expression
+            expression,
         })
     }
 
@@ -62,9 +62,12 @@ impl Parser {
 
     fn unary_expr2(&mut self) -> Option<Expr> {
         let op = self.next_map(|x| UnaryOp::from(x))?;
-        let expr = self.expr2()
-            .expect("Expected expr after unary op");
-        Expr::UnaryExpr { op, expr: Box::new(expr) }.into()
+        let expr = self.expr2().expect("Expected expr after unary op");
+        Expr::UnaryExpr {
+            op,
+            expr: Box::new(expr),
+        }
+        .into()
     }
 
     fn declaration(&mut self) -> Option<Node> {
@@ -180,7 +183,8 @@ impl Parser {
         let exp = self.expression();
         let closing_paren = self.next_if(|x| matches!(x.kind(), TokenKind::CloseParen));
         if closing_paren.is_none() {
-            self.errors.push(ParsingError::ExpectedToken(ExpectedToken::ClosingParen));
+            self.errors
+                .push(ParsingError::ExpectedToken(ExpectedToken::ClosingParen));
         }
         exp
     }

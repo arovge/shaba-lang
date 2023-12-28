@@ -60,7 +60,7 @@ pub enum Expr {
 #[derive(Debug)]
 pub enum UnaryOp {
     Minus,
-    Negate
+    Negate,
 }
 
 impl UnaryOp {
@@ -68,7 +68,7 @@ impl UnaryOp {
         match token.kind() {
             TokenKind::Minus => UnaryOp::Minus.into(),
             TokenKind::Negate => UnaryOp::Negate.into(),
-            _ => None
+            _ => None,
         }
     }
 }

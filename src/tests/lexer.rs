@@ -17,7 +17,7 @@ fn tokenizes_unterminated_str() {
     let expected = LexerError::new(
         TokenizeError::UnterminatedString,
         SourceLocation::new(2, 22),
-        SourceLocation::new(3, 5)
+        SourceLocation::new(3, 5),
     );
 
     assert_eq!(result, expected);
@@ -34,7 +34,7 @@ fn tokenizes_unknown_lexme() {
     let expected = LexerError::new(
         TokenizeError::UnknownLexme('ඞ'),
         SourceLocation::new(2, 22),
-        SourceLocation::new(2, 23)
+        SourceLocation::new(2, 23),
     );
 
     assert_eq!(result, expected);

@@ -73,13 +73,13 @@ impl Lexer {
         let lexme = &String::from_iter(chars);
 
         if let Some(literal) = Literal::as_bool(lexme) {
-            return TokenKind::Literal(literal).into()
-        } 
-        
+            return TokenKind::Literal(literal).into();
+        }
+
         if let Some(keyword) = Keyword::from_str(lexme) {
             return TokenKind::Keyword(keyword).into();
         }
-        
+
         TokenKind::Identifier(lexme.to_string()).into()
     }
 

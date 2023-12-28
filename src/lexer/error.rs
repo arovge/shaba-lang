@@ -11,7 +11,7 @@ impl LexerError {
     pub fn new(error: TokenizeError, start: SourceLocation, end: SourceLocation) -> Self {
         Self {
             error,
-            location: start..end
+            location: start..end,
         }
     }
 }

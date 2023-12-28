@@ -107,7 +107,7 @@ impl Literal {
         let result = match s {
             "true" => true.into(),
             "false" => false.into(),
-            _ => None
+            _ => None,
         }?;
         Some(Literal::Bool(result))
     }
@@ -134,7 +134,7 @@ impl Keyword {
             "fn" => Keyword::Fn.into(),
             "if" => Keyword::If.into(),
             "else" => Keyword::Else.into(),
-            _ => None
+            _ => None,
         }
     }
 }

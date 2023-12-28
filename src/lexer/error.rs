@@ -3,15 +3,15 @@ use std::ops::Range;
 
 #[derive(Debug, PartialEq)]
 pub struct LexerError {
+    error: LexingError,
     location: Range<SourceLocation>,
-    error: LexingError
 }
 
 impl LexerError {
-    pub fn new(location: Range<SourceLocation>, error: LexingError) -> Self {
+    pub fn new(error: LexingError, start: SourceLocation, end: SourceLocation) -> Self {
         Self {
-            location,
-            error
+            error,
+            location: start..end,
         }
     }
 }
@@ -19,12 +19,5 @@ impl LexerError {
 #[derive(Debug, PartialEq)]
 pub enum LexingError {
     UnterminatedString,
-    UnknownLexme(char)
-}
-
-impl LexingError {
-    pub fn lexer_err(self, start: SourceLocation, end: SourceLocation) -> LexerError {
-        let location = start..end;
-        LexerError::new(location, self)
-    }
+    UnknownLexme(char),
 }

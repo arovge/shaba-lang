@@ -102,6 +102,17 @@ pub enum Literal {
     String(String),
 }
 
+impl Literal {
+    pub fn as_bool(s: &str) -> Option<Literal> {
+        let result = match s {
+            "true" => true.into(),
+            "false" => false.into(),
+            _ => None,
+        }?;
+        Some(Literal::Bool(result))
+    }
+}
+
 impl From<Literal> for TokenKind {
     fn from(literal: Literal) -> TokenKind {
         TokenKind::Literal(literal)
@@ -111,7 +122,21 @@ impl From<Literal> for TokenKind {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Keyword {
     Let,
-    Var,
+    Fn,
+    If,
+    Else,
+}
+
+impl Keyword {
+    pub fn from_str(s: &str) -> Option<Keyword> {
+        match s {
+            "let" => Keyword::Let.into(),
+            "fn" => Keyword::Fn.into(),
+            "if" => Keyword::If.into(),
+            "else" => Keyword::Else.into(),
+            _ => None,
+        }
+    }
 }
 
 impl From<Keyword> for TokenKind {

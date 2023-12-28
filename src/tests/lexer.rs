@@ -1,8 +1,6 @@
 use std::iter::zip;
-use crate::lexer::error::LexingError;
-
 use crate::lexer::{
-    error::LexerError,
+    error::{LexerError, LexingError},
     lib::Lexer,
     token::{Keyword, Literal, SourceLocation, Token, TokenKind},
 };
@@ -16,9 +14,11 @@ fn tokenizes_unterminated_str() {
     let result = lexer.tokenize().unwrap_err();
 
     let expected = LexerError::new(
-        SourceLocation::new(2, 22)..SourceLocation::new(3, 5),
-        LexingError::UnterminatedString
+        LexingError::UnterminatedString,
+        SourceLocation::new(2, 22),
+        SourceLocation::new(3, 5),
     );
+
     assert_eq!(result, expected);
 }
 
@@ -30,10 +30,10 @@ fn tokenizes_unknown_lexme() {
     let mut lexer = Lexer::new(source);
     let result = lexer.tokenize().unwrap_err();
 
-    let location = SourceLocation::new(2, 22)..SourceLocation::new(2, 23);
     let expected = LexerError::new(
-        location,
-        LexingError::UnknownLexme('ඞ')
+        LexingError::UnknownLexme('ඞ'),
+        SourceLocation::new(2, 22),
+        SourceLocation::new(2, 23),
     );
 
     assert_eq!(result, expected);

@@ -23,20 +23,21 @@ impl Lexer {
             tokens.push(token);
         }
 
+        assert!(self.source.is_eof());
         Ok(tokens)
     }
 
     fn next_token(&mut self) -> Result<Option<Token>, LexerError> {
         self.source.advance_to_next_token();
 
-        let start = self.source.position();
+        let start = self.source.location();
         let next_token_kind = self.next_token_kind();
-        let end = self.source.position();
+        let end = self.source.location();
 
         match next_token_kind {
             Ok(Some(token_kind)) => Ok(Some(Token::new(token_kind, start, end))),
             Ok(None) => Ok(None),
-            Err(e) => Err(e.lexer_err(start, end)),
+            Err(e) => Err(LexerError::new(e, start, end)),
         }
     }
 
@@ -69,17 +70,23 @@ impl Lexer {
         while let Some(ch) = self.source.next_if(is_identifier) {
             chars.push(ch);
         }
-        let lexme = String::from_iter(chars);
-        let token_kind = match lexme.as_str() {
-            "true" => TokenKind::Literal(Literal::Bool(true)),
-            "false" => TokenKind::Literal(Literal::Bool(false)),
-            "let" => TokenKind::Keyword(Keyword::Let),
-            "var" => TokenKind::Keyword(Keyword::Var),
-            _ => TokenKind::Identifier(lexme.to_string()),
-        };
-        Some(token_kind)
+        let lexme = &String::from_iter(chars);
+
+        if let Some(literal) = Literal::as_bool(lexme) {
+            return TokenKind::Literal(literal).into();
+        }
+
+        if let Some(keyword) = Keyword::from_str(lexme) {
+            return TokenKind::Keyword(keyword).into();
+        }
+
+        TokenKind::Identifier(lexme.to_string()).into()
     }
 
+    // TODO: this fn name makes no sense anymore
+    // Find a better way to do this
+    // The token should be responsible for trying to map a string into Option<TokenKind>
+    // This should only read stuff and present it to that fn
     fn read_single_char_token(&mut self) -> Option<TokenKind> {
         let token_kind = self.source.next_map(TokenKind::from_char)?;
 
@@ -117,10 +124,10 @@ impl Lexer {
         Ok(None)
     }
 
-    fn read_str(&mut self) -> Result<Option<String>, LexingError> {
-        let Some(_) = self.source.next_if(|ch| ch == '"') else {
+    fn read_str(&mut self) -> Result<Option<String>, TokenizeError> {
+        if self.source.next_if(|ch| ch == '"').is_none() {
             return Ok(None);
-        };
+        }
 
         let str = self
             .source

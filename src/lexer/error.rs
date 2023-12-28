@@ -7,18 +7,17 @@ pub struct LexerError {
     location: Range<SourceLocation>,
 }
 
+impl LexerError {
+    pub fn new(error: TokenizeError, start: SourceLocation, end: SourceLocation) -> Self {
+        Self {
+            error,
+            location: start..end
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum TokenizeError {
     UnterminatedString,
     UnknownLexme(char),
-}
-
-impl TokenizeError {
-    pub fn into_lexer_err(self, start: SourceLocation, end: SourceLocation) -> LexerError {
-        let location = start..end;
-        LexerError {
-            error: self,
-            location,
-        }
-    }
 }

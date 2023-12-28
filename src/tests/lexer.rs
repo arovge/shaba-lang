@@ -14,8 +14,11 @@ fn tokenizes_unterminated_str() {
     let mut lexer = Lexer::new(source);
     let result = lexer.tokenize().unwrap_err();
 
-    let expected = TokenizeError::UnterminatedString
-        .into_lexer_err(SourceLocation::new(2, 22), SourceLocation::new(3, 5));
+    let expected = LexerError::new(
+        TokenizeError::UnterminatedString,
+        SourceLocation::new(2, 22),
+        SourceLocation::new(3, 5)
+    );
 
     assert_eq!(result, expected);
 }
@@ -28,8 +31,11 @@ fn tokenizes_unknown_lexme() {
     let mut lexer = Lexer::new(source);
     let result = lexer.tokenize().unwrap_err();
 
-    let expected = TokenizeError::UnknownLexme('ඞ')
-        .into_lexer_err(SourceLocation::new(2, 22), SourceLocation::new(2, 23));
+    let expected = LexerError::new(
+        TokenizeError::UnknownLexme('ඞ'),
+        SourceLocation::new(2, 22),
+        SourceLocation::new(2, 23)
+    );
 
     assert_eq!(result, expected);
 }

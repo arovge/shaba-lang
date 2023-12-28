@@ -22,6 +22,10 @@ impl Source {
         SourceLocation::new(self.line_position, self.column_position)
     }
 
+    pub fn is_eof(&self) -> bool {
+        self.peek().is_none()
+    }
+
     pub fn advance_to_next_token(&mut self) {
         while self.is_at_start_of_comment() || self.is_next_char_whitespace() {
             if self.is_at_start_of_comment() {
@@ -58,12 +62,12 @@ impl Source {
         }
     }
 
-    pub fn peek(&mut self) -> Option<char> {
+    pub fn peek(&self) -> Option<char> {
         let ch = *self.chars.get(self.index)?;
         Some(ch)
     }
 
-    pub fn peek_next(&mut self) -> Option<char> {
+    pub fn peek_next(&self) -> Option<char> {
         let ch = *self.chars.get(self.index + 1)?;
         Some(ch)
     }
@@ -100,11 +104,11 @@ impl Source {
         self.index += 1;
     }
 
-    fn is_at_start_of_comment(&mut self) -> bool {
+    fn is_at_start_of_comment(&self) -> bool {
         self.peek() == Some('/') && self.peek_next() == Some('/')
     }
 
-    fn is_next_char_whitespace(&mut self) -> bool {
+    fn is_next_char_whitespace(&self) -> bool {
         let Some(ch) = self.peek() else {
             return false;
         };

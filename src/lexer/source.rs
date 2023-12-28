@@ -1,8 +1,8 @@
-use super::token::SourcePosition;
+use super::token::SourceLocation;
 
 pub struct Source {
     chars: Vec<char>,
-    cursor: usize,
+    index: usize,
     line_position: usize,
     column_position: usize,
 }
@@ -12,14 +12,18 @@ impl Source {
         let chars: Vec<char> = source.chars().collect();
         Self {
             chars,
-            cursor: 0,
+            index: 0,
             line_position: 1,
             column_position: 1,
         }
     }
 
-    pub fn position(&self) -> SourcePosition {
-        SourcePosition::new(self.line_position, self.column_position)
+    pub fn location(&self) -> SourceLocation {
+        SourceLocation::new(self.line_position, self.column_position)
+    }
+
+    pub fn is_eof(&self) -> bool {
+        self.peek().is_none()
     }
 
     pub fn advance_to_next_token(&mut self) {
@@ -44,7 +48,11 @@ impl Source {
     }
 
     pub fn advance_while(&mut self, condition: impl Fn(char) -> bool) {
-        while self.next_if(&condition).is_some() {}
+        loop {
+            if self.next_if(&condition).is_none() {
+                break;
+            }
+        }
     }
 
     pub fn advance_past_next(&mut self, ch: char) {
@@ -54,30 +62,22 @@ impl Source {
         }
     }
 
-    pub fn peek(&mut self) -> Option<char> {
-        let ch = *self.chars.get(self.cursor)?;
+    pub fn peek(&self) -> Option<char> {
+        let ch = *self.chars.get(self.index)?;
         Some(ch)
     }
 
-    pub fn peek_next(&mut self) -> Option<char> {
-        let ch = *self.chars.get(self.cursor + 1)?;
+    pub fn peek_next(&self) -> Option<char> {
+        let ch = *self.chars.get(self.index + 1)?;
         Some(ch)
     }
 
     pub fn next_if(&mut self, condition: impl Fn(char) -> bool) -> Option<char> {
-        let next = *self.chars.get(self.cursor)?;
-
-        if !condition(next) {
-            return None;
-        }
-
-        self.increment_cursor(next);
-
-        Some(next)
+        self.next_map(|x| if condition(x) { Some(x) } else { None })
     }
 
     pub fn next_map<T>(&mut self, map: impl Fn(char) -> Option<T>) -> Option<T> {
-        let next = *self.chars.get(self.cursor)?;
+        let next = *self.chars.get(self.index)?;
         let result = map(next);
         if result.is_some() {
             self.increment_cursor(next);
@@ -86,7 +86,7 @@ impl Source {
     }
 
     pub fn next(&mut self) -> Option<char> {
-        let next = *self.chars.get(self.cursor)?;
+        let next = *self.chars.get(self.index)?;
 
         self.increment_cursor(next);
 
@@ -101,14 +101,14 @@ impl Source {
             self.column_position += 1;
         }
 
-        self.cursor += 1;
+        self.index += 1;
     }
 
-    fn is_at_start_of_comment(&mut self) -> bool {
+    fn is_at_start_of_comment(&self) -> bool {
         self.peek() == Some('/') && self.peek_next() == Some('/')
     }
 
-    fn is_next_char_whitespace(&mut self) -> bool {
+    fn is_next_char_whitespace(&self) -> bool {
         let Some(ch) = self.peek() else {
             return false;
         };

@@ -1,11 +1,18 @@
+use crate::lexer::token::SourceLocation;
+use std::ops::Range;
+
 #[derive(Debug)]
 pub struct ParserError {
-    errors: Vec<ParsingError>, // source_position: SourcePosition
+    errors: Vec<ParsingError>,
+    location: Range<SourceLocation>,
 }
 
 impl ParserError {
-    pub fn new(errors: Vec<ParsingError>) -> Self {
-        Self { errors }
+    pub fn new(errors: Vec<ParsingError>, start: SourceLocation, end: SourceLocation) -> Self {
+        Self {
+            errors,
+            location: start..end,
+        }
     }
 }
 

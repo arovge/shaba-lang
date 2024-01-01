@@ -6,7 +6,7 @@ pub mod parser;
 #[cfg(test)]
 mod tests;
 
-use crate::{lexer::lib::Lexer, parser::Parser};
+use crate::lexer::lib::Lexer;
 use error::ShabaCompilerError;
 
 fn main() -> Result<(), ShabaCompilerError> {
@@ -14,8 +14,7 @@ fn main() -> Result<(), ShabaCompilerError> {
     let mut lexer = Lexer::new(source.as_str());
     let tokens = lexer.tokenize()?;
 
-    let mut parser = Parser::new(tokens);
-    let ast = parser.parse()?;
+    let ast = parser::parse(tokens)?;
 
     println!("{:?}", ast);
 

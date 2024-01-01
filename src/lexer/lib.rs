@@ -23,7 +23,7 @@ impl Lexer {
             tokens.push(token);
         }
 
-        assert!(self.source.is_eof());
+        assert!(self.source.is_eof(), "Not at end of file");
         Ok(tokens)
     }
 

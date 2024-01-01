@@ -1,6 +1,6 @@
 use crate::lexer::token::{Keyword, Literal, Token, TokenKind};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Operator {
     Plus,
     Minus,
@@ -10,7 +10,7 @@ pub enum Operator {
     Cmp(Cmp),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Cmp {
     LessThan,
     LessThanEq,
@@ -19,7 +19,7 @@ pub enum Cmp {
     GreaterThanEq,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Node {
     Int(i32),
     Double(f32),
@@ -44,7 +44,7 @@ pub enum Node {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Expr {
     UnaryExpr {
         op: UnaryOp,
@@ -57,10 +57,11 @@ pub enum Expr {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum UnaryOp {
     Minus,
     Negate,
+    Assign,
 }
 
 impl UnaryOp {

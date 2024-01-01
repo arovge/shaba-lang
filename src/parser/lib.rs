@@ -3,7 +3,7 @@ use super::{
     ast::{Cmp, Expr, Node, Operator, UnaryOp},
     error::{ParserError, ParsingError},
 };
-use crate::lexer::token::{Keyword, Token, TokenKind};
+use crate::lexer::token::{Keyword, SourceLocation, Token, TokenKind};
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -22,34 +22,63 @@ impl Parser {
 
     pub fn parse(&mut self) -> Result<Vec<Node>, ParserError> {
         let mut statements = Vec::new();
-        while let Some(exp) = self.declaration() {
+        while let Some(exp) = self.new_statement() {
             statements.push(exp);
             println!("{:?}", statements);
         }
-        if self.is_not_at_eof() {
-            panic!("Expected to be at end of tokens. But was not.");
-        }
+        // assert!(self.is_at_end(), "Not at end of tokens");
         if self.errors.len() > 0 {
-            return Err(ParserError::new(self.errors.clone()));
+            return Err(ParserError::new(
+                self.errors.clone(),
+                SourceLocation::new(0, 0),
+                SourceLocation::new(0, 0),
+            ));
         }
         Ok(statements)
     }
 
-    // TODO: everything below is BAD
+    fn new_statement(&mut self) -> Option<Node> {
+        // let_decl | fn_decl | expr ;
+        self.new_let_decl()
+            .or_else(|| None)
+    }
 
-    fn let_decl(&mut self) -> Option<Node> {
-        let _keyword = self.next_if_keyword()?;
+    fn new_let_decl(&mut self) -> Option<Node> {
+        self.next_if(|x| x.as_keyword() == Some(Keyword::Let))?;
         let identifier = self.next_if_identifier().expect("Expected identifier");
         self.next_if(|x| *x.kind() == TokenKind::Eq)
             .expect("Expected = in let decl");
         let expression = self
-            .expr2()
+            .new_expr()
             .expect("Expected expression after `let <ident> = `");
         Some(Node::LetDecl {
             identifier,
             expression,
         })
     }
+
+    fn new_expr(&mut self) -> Option<Expr> {
+        // if_expr | unit_expr | let_expr | literal | unary_expr ;
+        None
+    }
+
+    fn new_fn_decl(&mut self) -> Option<Node> {
+        let keyword = self.next_if_keyword()?;
+        assert!(matches!(keyword, Keyword::Let), "Expected 'let' keyword");
+
+        let identifier = self.next_if_identifier().expect("Expected identifier");
+        self.next_if(|x| *x.kind() == TokenKind::Eq)
+            .expect("Expected = in let decl");
+        let expression = self
+            .new_expr()
+            .expect("Expected expression after `let <ident> = `");
+        Some(Node::LetDecl {
+            identifier,
+            expression,
+        })
+    }
+
+    // TODO: everything below is BAD
 
     fn expr2(&mut self) -> Option<Expr> {
         self.unary_expr2()
@@ -274,7 +303,7 @@ impl Parser {
         self.next_map(|x| x.as_comparison())
     }
 
-    fn is_not_at_eof(&self) -> bool {
-        self.peek().is_some()
+    fn is_at_end(&self) -> bool {
+        self.peek().is_none()
     }
 }

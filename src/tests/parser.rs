@@ -1,5 +1,5 @@
 use crate::{
-    lexer::lib::Lexer,
+    lexer::lexer::Lexer,
     parser::{
         self,
         ast::{Expr, Node, UnaryOp},

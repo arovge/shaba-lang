@@ -1,7 +1,6 @@
 use crate::lexer::{
     error::{LexerError, LexingError},
-    lib::Lexer,
-    token::{Keyword, Literal, SourceLocation, Token, TokenKind},
+    token::{Keyword, Literal, SourceLocation, Token, TokenKind}, self,
 };
 use std::iter::zip;
 
@@ -10,8 +9,7 @@ fn tokenizes_unterminated_str() {
     let source = r#"
         let person = "Bob
     "#;
-    let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize().unwrap_err();
+    let result = lexer::tokenize(source).unwrap_err();
 
     let expected = LexerError::new(
         LexingError::UnterminatedString,
@@ -27,8 +25,7 @@ fn tokenizes_unknown_lexme() {
     let source = r#"
         let amogus = ඞ
     "#;
-    let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize().unwrap_err();
+    let result = lexer::tokenize(source).unwrap_err();
 
     let expected = LexerError::new(
         LexingError::UnknownLexme('ඞ'),
@@ -44,8 +41,7 @@ fn tokenizes_empty_str() {
     let source = r#"
         let message = ""
     "#;
-    let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize().unwrap();
+    let result = lexer::tokenize(source).unwrap();
 
     let expected = vec![
         Token::new(
@@ -78,8 +74,7 @@ fn tokenizes_greater_than_eq() {
     let source = r#"
         18 >= 18
     "#;
-    let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize().unwrap();
+    let result = lexer::tokenize(source).unwrap();
 
     let expected = vec![
         Token::new(
@@ -107,8 +102,7 @@ fn tokenizes_less_than_eq() {
     let source = r#"
         14 <= 18
     "#;
-    let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize().unwrap();
+    let result = lexer::tokenize(source).unwrap();
 
     let expected = vec![
         Token::new(
@@ -136,8 +130,7 @@ fn tokenizes_not_eq() {
     let source = r#"
         0 != 1
     "#;
-    let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize().unwrap();
+    let result = lexer::tokenize(source).unwrap();
 
     let expected = vec![
         Token::new(
@@ -165,8 +158,7 @@ fn tokenizes_eq_eq() {
     let source = r#"
         1 == 1
     "#;
-    let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize().unwrap();
+    let result = lexer::tokenize(source).unwrap();
 
     let expected = vec![
         Token::new(
@@ -199,8 +191,7 @@ fn tokenizes_skips_whitespace_and_comments() {
         // SHABA.GOV/HTTPS://SHABA
         let forget = "about it"
     "#;
-    let mut lexer = Lexer::new(source);
-    let result: Vec<Token> = lexer.tokenize().unwrap();
+    let result: Vec<Token> = lexer::tokenize(source).unwrap();
 
     let expected = vec![
         Token::new(
@@ -253,8 +244,7 @@ fn tokenizes_literal_bool() {
     let source = r#"
         let isAustinCool = true
     "#;
-    let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize().unwrap();
+    let result = lexer::tokenize(source).unwrap();
 
     let expected = vec![
         Token::new(
@@ -287,8 +277,7 @@ fn tokenizes_literal_str() {
     let source = r#"
         "hello, world!"
     "#;
-    let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize().unwrap();
+    let result = lexer::tokenize(source).unwrap();
 
     let expected = vec![Token::new(
         Literal::String(String::from("hello, world!")).into(),
@@ -304,8 +293,7 @@ fn tokenizes_literal_integer() {
     let source = r#"
         let age = 24
     "#;
-    let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize().unwrap();
+    let result = lexer::tokenize(source).unwrap();
 
     let expected = vec![
         Token::new(
@@ -342,8 +330,7 @@ fn tokenizes_snippet() {
         let num = 1 + 1
         let isNumGreaterThanZero = num > 0
     "#;
-    let mut lexer = Lexer::new(source);
-    let result = lexer.tokenize().unwrap();
+    let result = lexer::tokenize(source).unwrap();
 
     let expected: Vec<Token> = vec![
         Token::new(

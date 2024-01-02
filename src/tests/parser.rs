@@ -23,15 +23,50 @@ fn parses_unit() {
 }
 
 #[test]
-fn parses_unit_let_decl() {
+fn parses_literals() {
     let input = r#"
-        let shaba = ()
+        1
+        "eeeoo"
+        true
     "#;
     let result = parse_str(input).unwrap();
-    let expected = vec![Node::Decl(Decl::Let {
-        identifier: "shaba".to_string(),
-        expression: Expr::Unit,
-    })];
+    let expected = vec![
+        Node::Expr(Expr::Int(1)),
+        // TODO: Doubles not supported rn
+        // Node::Expr(Expr::Double(1.2)),
+        Node::Expr(Expr::String("eeeoo".to_string())),
+        Node::Expr(Expr::Bool(true))
+    ];
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn parses_unit_let_decl() {
+    let input = r#"
+        let unit_decl = ()
+        let int_decl = 1234
+        let str_decl = "hello world"
+        let bool_decl = false
+    "#;
+    let result = parse_str(input).unwrap();
+    let expected = vec![
+        Node::Decl(Decl::Let {
+            identifier: "unit_decl".to_string(),
+            expression: Expr::Unit,
+        }),
+        Node::Decl(Decl::Let {
+            identifier: "int_decl".to_string(),
+            expression: Expr::Int(1234),
+        }),
+        Node::Decl(Decl::Let {
+            identifier: "str_decl".to_string(),
+            expression: Expr::String("hello world".to_string()),
+        }),
+        Node::Decl(Decl::Let {
+            identifier: "bool_decl".to_string(),
+            expression: Expr::Bool(false),
+        })
+    ];
     assert_eq!(result, expected);
 }
 

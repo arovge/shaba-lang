@@ -21,10 +21,6 @@ pub enum Cmp {
 
 #[derive(Debug, PartialEq)]
 pub enum Node {
-    Int(i32),
-    Double(f32),
-    String(String),
-    Bool(bool),
     Expr(Expr),
     Decl(Decl),
     Identifier(String),
@@ -53,6 +49,10 @@ pub enum Decl {
 #[derive(Debug, PartialEq)]
 pub enum Expr {
     Unit,
+    Int(i32),
+    Double(f32),
+    String(String),
+    Bool(bool),
     UnaryExpr {
         op: UnaryOp,
         expr: Box<Expr>,
@@ -93,15 +93,15 @@ impl Token {
         }
     }
 
-    pub fn as_literal_node(&self) -> Option<Node> {
+    pub fn as_literal_expr(&self) -> Option<Expr> {
         let TokenKind::Literal(literal) = self.kind() else {
             return None;
         };
         let node = match literal {
-            Literal::Int(n) => Node::Int(*n),
-            Literal::Double(n) => Node::Double(*n),
-            Literal::Bool(n) => Node::Bool(*n),
-            Literal::String(n) => Node::String(n.clone()),
+            Literal::Int(n) => Expr::Int(*n),
+            Literal::Double(n) => Expr::Double(*n),
+            Literal::Bool(n) => Expr::Bool(*n),
+            Literal::String(n) => Expr::String(n.clone()),
         };
         Some(node)
     }

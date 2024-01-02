@@ -26,7 +26,10 @@ impl Parser {
         while let Some(exp) = self.statement() {
             statements.push(exp);
         }
-        // assert!(self.is_at_end(), "Not at end of tokens");
+        if !self.scanner.is_eof() {
+            println!("{:?}", self.scanner.peek());
+        }
+        assert!(self.scanner.is_eof(), "Not at end of tokens");
         if !self.errors.is_empty() {
             return Err(ParserError::new(
                 self.errors
@@ -94,8 +97,9 @@ impl Parser {
     }
 
     fn expr(&mut self) -> Option<Expr> {
-        // if_expr | unit_expr | let_expr | literal | unary_expr ;
+        // if_expr | unit_expr | literal | unary_expr | binary_expr ;
         self.unit_expr()
+            .or_else(|| self.literal())
     }
 
     fn unit_expr(&mut self) -> Option<Expr> {
@@ -108,6 +112,10 @@ impl Parser {
         } else {
             None
         }
+    }
+
+    fn literal(&mut self) -> Option<Expr> {
+        self.scanner.next_if_map(|x| x.as_literal_expr())
     }
 
     // TODO: everything below is BAD
@@ -237,19 +245,20 @@ impl Parser {
     }
 
     fn primary(&mut self) -> Option<Node> {
-        let literal = self.next_if_literal_node();
-        if literal.is_some() {
-            return literal;
-        }
-        let exp = self.expression();
-        let closing_paren = self
-            .scanner
-            .next_if(|x| matches!(x.kind(), TokenKind::CloseParen));
-        if closing_paren.is_none() {
-            self.errors
-                .push(ParsingError::ExpectedToken(ExpectedToken::ClosingParen));
-        }
-        exp
+        // let literal = self.next_if_literal_node();
+        // if literal.is_some() {
+        //     return literal;
+        // }
+        // let exp = self.expression();
+        // let closing_paren = self
+        //     .scanner
+        //     .next_if(|x| matches!(x.kind(), TokenKind::CloseParen));
+        // if closing_paren.is_none() {
+        //     self.errors
+        //         .push(ParsingError::ExpectedToken(ExpectedToken::ClosingParen));
+        // }
+        // exp
+        None
     }
 
     fn synchronize(&mut self) {
@@ -313,8 +322,8 @@ impl Parser {
         self.scanner.next_if_map(|x| x.as_operator())
     }
 
-    fn next_if_literal_node(&mut self) -> Option<Node> {
-        self.scanner.next_if_map(|x| x.as_literal_node())
+    fn next_if_literal_expr(&mut self) -> Option<Expr> {
+        self.scanner.next_if_map(|x| x.as_literal_expr())
     }
 
     fn next_if_keyword(&mut self) -> Option<Keyword> {

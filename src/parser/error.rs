@@ -1,21 +1,17 @@
-use crate::lexer::token::SourceLocation;
-use std::ops::Range;
-
 #[derive(Debug)]
 pub struct ParserError {
     errors: Vec<ParsingError>,
-    location: Range<SourceLocation>,
 }
 
 impl ParserError {
-    pub fn new(errors: Vec<ParsingError>, start: SourceLocation, end: SourceLocation) -> Self {
+    pub fn new(errors: Vec<ParsingError>) -> Self {
         Self {
             errors,
-            location: start..end,
         }
     }
 }
 
+// TODO: Add source location onto this
 #[derive(Debug, Clone)]
 pub enum ParsingError {
     ExpectedToken(ExpectedToken),

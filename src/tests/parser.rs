@@ -34,3 +34,17 @@ fn parses_unit_let_decl() {
     })];
     assert_eq!(result, expected);
 }
+
+#[test]
+fn parses_fn_decl() {
+    let input = r#"
+        fn some_func() {
+
+        }
+    "#;
+    let result = parse_str(input).unwrap();
+    let expected = vec![Node::Decl(Decl::Fn {
+        identifier: "some_func".to_string(),
+    })];
+    assert_eq!(result, expected);
+}

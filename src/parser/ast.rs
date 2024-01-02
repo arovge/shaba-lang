@@ -45,6 +45,9 @@ pub enum Decl {
         identifier: String,
         expression: Expr,
     },
+    Fn {
+        identifier: String,
+    },
 }
 
 #[derive(Debug, PartialEq)]

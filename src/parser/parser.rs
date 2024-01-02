@@ -5,7 +5,7 @@ use super::{
     ast::{Cmp, Expr, Node, Operator, UnaryOp},
     error::{ParserError, ParsingError},
 };
-use crate::lexer::token::{Keyword, SourceLocation, Token, TokenKind};
+use crate::lexer::token::{Keyword, Token, TokenKind};
 
 pub struct Parser {
     scanner: Scanner,
@@ -21,54 +21,60 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Vec<Node>, ParserError> {
+    pub fn parse(mut self) -> Result<Vec<Node>, ParserError> {
         let mut statements = Vec::new();
-        while let Some(exp) = self.new_statement() {
+        while let Some(exp) = self.statement() {
             statements.push(exp);
-            println!("{:?}", statements);
         }
         // assert!(self.is_at_end(), "Not at end of tokens");
-        if self.errors.len() > 0 {
+        if !self.errors.is_empty() {
             return Err(ParserError::new(
-                self.errors.clone(),
-                SourceLocation::new(0, 0),
-                SourceLocation::new(0, 0),
+                self.errors
             ));
         }
         Ok(statements)
     }
 
-    fn new_statement(&mut self) -> Option<Node> {
-        // let_decl | fn_decl | expr ;
+    fn statement(&mut self) -> Option<Node> {
+        // decl | expr ;
         self.decl()
             .map(Node::Decl)
             .or_else(|| self.expr().map(Node::Expr))
     }
 
     fn decl(&mut self) -> Option<Decl> {
+        // let_decl | fn_decl
         self.let_decl().or_else(|| self.fn_decl())
     }
 
     fn fn_decl(&mut self) -> Option<Decl> {
-        let keyword = self.next_if_keyword()?;
-        assert!(matches!(keyword, Keyword::Let), "Expected 'let' keyword");
+        self.scanner
+            .next_if(|x| x.as_keyword() == Some(Keyword::Fn))?;
 
         let identifier = self.next_if_identifier().expect("Expected identifier");
         self.scanner
-            .next_if(|x| *x.kind() == TokenKind::Eq)
-            .expect("Expected = in let decl");
-        let expression = self
-            .expr()
-            .expect("Expected expression after `let <ident> = `");
-        Some(Decl::Let {
-            identifier,
-            expression,
-        })
-    }
+            .next_if(|x| matches!(x.kind(), TokenKind::OpenParen))
+            .expect("Expected '(' in fn decl");
 
-    fn expr(&mut self) -> Option<Expr> {
-        // if_expr | unit_expr | let_expr | literal | unary_expr ;
-        self.unit_expr()
+        // TODO: Parse args
+
+        self.scanner
+            .next_if(|x| matches!(x.kind(), TokenKind::CloseParen))
+            .expect("Expected ')' in fn decl");
+
+        // TODO: Parse return type
+
+        self.scanner
+            .next_if(|x| matches!(x.kind(), TokenKind::OpenBrace))
+            .expect("Expected '{' in fn decl");
+
+        // TOOD: Parse fn body
+
+        self.scanner
+            .next_if(|x| matches!(x.kind(), TokenKind::CloseBrace))
+            .expect("Expected '}' in fn decl");
+
+        Some(Decl::Fn { identifier })
     }
 
     fn let_decl(&mut self) -> Option<Decl> {
@@ -85,6 +91,11 @@ impl Parser {
             identifier,
             expression,
         })
+    }
+
+    fn expr(&mut self) -> Option<Expr> {
+        // if_expr | unit_expr | let_expr | literal | unary_expr ;
+        self.unit_expr()
     }
 
     fn unit_expr(&mut self) -> Option<Expr> {
@@ -134,7 +145,7 @@ impl Parser {
         statement
     }
 
-    fn statement(&mut self) -> Option<Node> {
+    fn old_statement(&mut self) -> Option<Node> {
         self.expression()
     }
 

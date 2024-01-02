@@ -4,7 +4,9 @@
 program     : rule + ;
 rule        : stmt + ;
 
-stmt        : let_decl | fn_decl | expr ;
+stmt        : decl | expr ;
+
+decl        : let_decl | fn_decl ;
 let_decl    : 'let' IDENTIFIER '=' expr ;
 fn_decl     : 'fn' IDENTIFIER '(' IDENTIFIER * ')' '{' expr '}' ;
 

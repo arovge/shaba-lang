@@ -1,18 +1,18 @@
 use super::token::SourceLocation;
 
-pub struct Source {
+pub struct Scanner {
     chars: Vec<char>,
-    index: usize,
+    cursor: usize,
     line_position: usize,
     column_position: usize,
 }
 
-impl Source {
+impl Scanner {
     pub fn new(source: &str) -> Self {
         let chars: Vec<char> = source.chars().collect();
         Self {
             chars,
-            index: 0,
+            cursor: 0,
             line_position: 1,
             column_position: 1,
         }
@@ -63,21 +63,19 @@ impl Source {
     }
 
     pub fn peek(&self) -> Option<char> {
-        let ch = *self.chars.get(self.index)?;
-        Some(ch)
+        self.chars.get(self.cursor).map(|c| c.to_owned())
     }
 
     pub fn peek_next(&self) -> Option<char> {
-        let ch = *self.chars.get(self.index + 1)?;
-        Some(ch)
+        self.chars.get(self.cursor + 1).map(|c| c.to_owned())
     }
 
     pub fn next_if(&mut self, condition: impl Fn(char) -> bool) -> Option<char> {
-        self.next_map(|x| if condition(x) { Some(x) } else { None })
+        self.next_if_map(|x| if condition(x.clone()) { Some(x) } else { None })
     }
 
-    pub fn next_map<T>(&mut self, map: impl Fn(char) -> Option<T>) -> Option<T> {
-        let next = *self.chars.get(self.index)?;
+    pub fn next_if_map<T>(&mut self, map: impl Fn(char) -> Option<T>) -> Option<T> {
+        let next = self.peek()?;
         let result = map(next);
         if result.is_some() {
             self.increment_cursor(next);
@@ -86,7 +84,7 @@ impl Source {
     }
 
     pub fn next(&mut self) -> Option<char> {
-        let next = *self.chars.get(self.index)?;
+        let next = self.peek()?;
 
         self.increment_cursor(next);
 
@@ -101,18 +99,21 @@ impl Source {
             self.column_position += 1;
         }
 
-        self.index += 1;
+        self.cursor += 1;
     }
 
     fn is_at_start_of_comment(&self) -> bool {
-        self.peek() == Some('/') && self.peek_next() == Some('/')
+        let cond = |c: char| c == '/';
+        self.peek()
+            .map(cond)
+            .and_then(|_| self.peek_next().map(cond))
+            .unwrap_or(false)
     }
 
     fn is_next_char_whitespace(&self) -> bool {
-        let Some(ch) = self.peek() else {
-            return false;
-        };
-        ch.is_ascii_whitespace()
+        self.peek()
+            .map(|c| c.is_ascii_whitespace())
+            .unwrap_or(false)
     }
 
     fn advance_to_next_line(&mut self) {

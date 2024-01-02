@@ -3,12 +3,12 @@ use std::ops::Range;
 
 #[derive(Debug, PartialEq)]
 pub struct LexerError {
-    error: TokenizeError,
+    error: LexingError,
     location: Range<SourceLocation>,
 }
 
 impl LexerError {
-    pub fn new(error: TokenizeError, start: SourceLocation, end: SourceLocation) -> Self {
+    pub fn new(error: LexingError, start: SourceLocation, end: SourceLocation) -> Self {
         Self {
             error,
             location: start..end,
@@ -17,7 +17,7 @@ impl LexerError {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum TokenizeError {
+pub enum LexingError {
     UnterminatedString,
     UnknownLexme(char),
 }

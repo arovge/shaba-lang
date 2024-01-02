@@ -31,9 +31,7 @@ impl Parser {
         }
         assert!(self.scanner.is_eof(), "Not at end of tokens");
         if !self.errors.is_empty() {
-            return Err(ParserError::new(
-                self.errors
-            ));
+            return Err(ParserError::new(self.errors));
         }
         Ok(statements)
     }
@@ -100,6 +98,7 @@ impl Parser {
         // if_expr | unit_expr | literal | unary_expr | binary_expr ;
         self.unit_expr()
             .or_else(|| self.literal())
+            .or_else(|| self.unary_expr())
     }
 
     fn unit_expr(&mut self) -> Option<Expr> {
@@ -114,63 +113,27 @@ impl Parser {
         }
     }
 
+    fn unary_expr(&mut self) -> Option<Expr> {
+        let op = self.scanner.next_if_map(|x| UnaryOp::from(&x))?;
+        let expr = self.expr().expect("Expected expr after unary op");
+        Some(Expr::Unary {
+            op,
+            expr: Box::new(expr),
+        })
+    }
+
     fn literal(&mut self) -> Option<Expr> {
         self.scanner.next_if_map(|x| x.as_literal_expr())
     }
 
     // TODO: everything below is BAD
 
-    fn expr2(&mut self) -> Option<Expr> {
-        self.unary_expr2()
-        // TODO: More expr types
-    }
-
-    fn if_expr() -> Option<Node> {
-        None
-    }
-
-    fn unary_expr2(&mut self) -> Option<Expr> {
-        let op = self.scanner.next_if_map(|x| UnaryOp::from(&x))?;
-        let expr = self.expr2().expect("Expected expr after unary op");
-        Expr::UnaryExpr {
-            op,
-            expr: Box::new(expr),
-        }
-        .into()
-    }
-
-    fn declaration(&mut self) -> Option<Node> {
-        if let Some(_keyword) = self.next_if_keyword() {
-            if let Some(identifier) = self.next_if_identifier() {
-                // return Some(Node::VarDecl { identifier });
-            }
-        }
-        let statement = self.statement();
-        if statement.is_none() {
-            self.synchronize();
-            return None;
-        }
-        statement
-    }
-
-    fn old_statement(&mut self) -> Option<Node> {
-        self.expression()
-    }
-
-    fn var_decl(&mut self) -> Option<Node> {
-        None
-    }
-
-    fn expression(&mut self) -> Option<Node> {
-        self.equality()
-    }
-
-    fn equality(&mut self) -> Option<Node> {
+    fn equality(&mut self) -> Option<Expr> {
         let mut expression = self.comparison()?;
 
         if let Some(cmp) = self.scanner.next_if_map(|t| t.as_comparison()) {
             let rhs = self.comparison().unwrap();
-            expression = Node::BinaryExpression {
+            expression = Expr::Binary {
                 op: Operator::Cmp(cmp),
                 lhs: Box::new(expression),
                 rhs: Box::new(rhs),
@@ -181,12 +144,12 @@ impl Parser {
     }
 
     // TODO: make sure next
-    fn comparison(&mut self) -> Option<Node> {
+    fn comparison(&mut self) -> Option<Expr> {
         let mut expression = self.term()?;
 
         while let Some(cmp) = self.next_if_cmp() {
             let rhs = self.term().unwrap();
-            expression = Node::BinaryExpression {
+            expression = Expr::Binary {
                 op: Operator::Cmp(cmp),
                 lhs: Box::new(expression),
                 rhs: Box::new(rhs),
@@ -196,12 +159,12 @@ impl Parser {
         Some(expression)
     }
 
-    fn term(&mut self) -> Option<Node> {
+    fn term(&mut self) -> Option<Expr> {
         let mut expression = self.factor()?;
 
         while let Some(operator) = self.next_if_operator() {
             let rhs = self.factor().unwrap();
-            expression = Node::BinaryExpression {
+            expression = Expr::Binary {
                 op: operator,
                 lhs: Box::new(expression),
                 rhs: Box::new(rhs),
@@ -211,12 +174,12 @@ impl Parser {
         Some(expression)
     }
 
-    fn factor(&mut self) -> Option<Node> {
-        let mut expression = self.unary_expression()?;
+    fn factor(&mut self) -> Option<Expr> {
+        let mut expression = self.unary_expr()?;
 
         while let Some(operator) = self.next_if_operator() {
-            let rhs = self.unary_expression().unwrap();
-            expression = Node::BinaryExpression {
+            let rhs = self.unary_expr().unwrap();
+            expression = Expr::Binary {
                 op: operator,
                 lhs: Box::new(expression),
                 rhs: Box::new(rhs),
@@ -230,18 +193,6 @@ impl Parser {
         let lhs = self.primary()?;
         // let operator = self.c
         Some(lhs)
-    }
-
-    fn unary_expression(&mut self) -> Option<Node> {
-        let Some(operator) = self.next_if_operator() else {
-            return self.primary();
-        };
-        let term = self.unary_expression()?;
-        let node = Node::UnaryExpression {
-            op: operator,
-            term: Box::new(term),
-        };
-        Some(node)
     }
 
     fn primary(&mut self) -> Option<Node> {

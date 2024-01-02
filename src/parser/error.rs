@@ -5,9 +5,7 @@ pub struct ParserError {
 
 impl ParserError {
     pub fn new(errors: Vec<ParsingError>) -> Self {
-        Self {
-            errors,
-        }
+        Self { errors }
     }
 }
 

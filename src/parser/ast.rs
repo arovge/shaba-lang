@@ -24,15 +24,6 @@ pub enum Node {
     Expr(Expr),
     Decl(Decl),
     Identifier(String),
-    UnaryExpression {
-        op: Operator,
-        term: Box<Node>,
-    },
-    BinaryExpression {
-        op: Operator,
-        lhs: Box<Node>,
-        rhs: Box<Node>,
-    },
 }
 
 #[derive(Debug, PartialEq)]
@@ -53,14 +44,14 @@ pub enum Expr {
     Double(f32),
     String(String),
     Bool(bool),
-    UnaryExpr {
+    Unary {
         op: UnaryOp,
         expr: Box<Expr>,
     },
-    BinaryExpr {
+    Binary {
         op: Operator,
-        lhs: Box<Node>,
-        rhs: Box<Node>,
+        lhs: Box<Expr>,
+        rhs: Box<Expr>,
     },
 }
 

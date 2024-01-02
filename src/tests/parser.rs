@@ -2,7 +2,7 @@ use crate::{
     lexer::{self},
     parser::{
         self,
-        ast::{Decl, Expr, Node},
+        ast::{Decl, Expr, Node, UnaryOp},
         error::ParserError,
     },
 };
@@ -35,7 +35,7 @@ fn parses_literals() {
         // TODO: Doubles not supported rn
         // Node::Expr(Expr::Double(1.2)),
         Node::Expr(Expr::String("eeeoo".to_string())),
-        Node::Expr(Expr::Bool(true))
+        Node::Expr(Expr::Bool(true)),
     ];
     assert_eq!(result, expected);
 }
@@ -65,7 +65,7 @@ fn parses_unit_let_decl() {
         Node::Decl(Decl::Let {
             identifier: "bool_decl".to_string(),
             expression: Expr::Bool(false),
-        })
+        }),
     ];
     assert_eq!(result, expected);
 }
@@ -80,6 +80,22 @@ fn parses_fn_decl() {
     let result = parse_str(input).unwrap();
     let expected = vec![Node::Decl(Decl::Fn {
         identifier: "some_func".to_string(),
+    })];
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn parses_unary_expr() {
+    let input = r#"
+        let a = -5
+    "#;
+    let result = parse_str(input).unwrap();
+    let expected = vec![Node::Decl(Decl::Let {
+        identifier: "a".to_string(),
+        expression: Expr::Unary {
+            op: UnaryOp::Minus,
+            expr: Box::new(Expr::Int(5)),
+        },
     })];
     assert_eq!(result, expected);
 }

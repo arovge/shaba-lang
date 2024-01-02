@@ -10,7 +10,7 @@ decl        : let_decl | fn_decl ;
 let_decl    : 'let' IDENTIFIER '=' expr ;
 fn_decl     : 'fn' IDENTIFIER '(' IDENTIFIER * ')' '{' expr '}' ;
 
-expr        : if_expr | unit_expr | let_expr | literal | unary_expr ;
+expr        : if_expr | unit_expr | literal | unary_expr | binary_expr ;
 if_expr     : 'if' expression '{' expr '}' else_tail ? ;
 else_tail   : 'else' [ 'if_expr' | '{' expr '}' ] ;
 unit_expr   : '()' ;

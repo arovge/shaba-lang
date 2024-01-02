@@ -1,26 +1,36 @@
 use crate::{
-    lexer::lexer::Lexer,
+    lexer::{self},
     parser::{
         self,
-        ast::{Expr, Node, UnaryOp},
+        ast::{Decl, Expr, Node},
+        error::ParserError,
     },
 };
 
+fn parse_str(input: &str) -> Result<Vec<Node>, ParserError> {
+    let tokens = lexer::tokenize(input).unwrap();
+    parser::parse(tokens)
+}
+
 #[test]
-fn it_can_do_something() {
+fn parses_unit() {
     let input = r#"
-        let a = "hello";
+        ()
     "#;
-    let mut lexer = Lexer::new(input);
-    let tokens = lexer.tokenize().unwrap();
-    let ast = parser::parse(tokens).unwrap();
-    println!("{:?}", ast);
-    // let expected = vec![Node::LetDecl {
-    //     identifier: String::from("a"),
-    //     expression: Expr::UnaryExpr {
-    //         op: UnaryOp::Assign,
-    //         expr: todo!(),
-    //     },
-    // }];
-    assert_ne!(ast.len(), 0);
+    let result = parse_str(input).unwrap();
+    let expected = vec![Node::Expr(Expr::Unit)];
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn parses_unit_let_decl() {
+    let input = r#"
+        let shaba = ()
+    "#;
+    let result = parse_str(input).unwrap();
+    let expected = vec![Node::Decl(Decl::Let {
+        identifier: "shaba".to_string(),
+        expression: Expr::Unit,
+    })];
+    assert_eq!(result, expected);
 }

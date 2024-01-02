@@ -25,13 +25,8 @@ pub enum Node {
     Double(f32),
     String(String),
     Bool(bool),
-    VarDecl {
-        identifier: String,
-    },
-    LetDecl {
-        identifier: String,
-        expression: Expr,
-    },
+    Expr(Expr),
+    Decl(Decl),
     Identifier(String),
     UnaryExpression {
         op: Operator,
@@ -45,7 +40,16 @@ pub enum Node {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum Decl {
+    Let {
+        identifier: String,
+        expression: Expr,
+    },
+}
+
+#[derive(Debug, PartialEq)]
 pub enum Expr {
+    Unit,
     UnaryExpr {
         op: UnaryOp,
         expr: Box<Expr>,

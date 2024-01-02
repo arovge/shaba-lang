@@ -1,3 +1,4 @@
+use super::ast::Decl;
 use super::error::ExpectedToken;
 use super::scanner::Scanner;
 use super::{
@@ -39,31 +40,16 @@ impl Parser {
 
     fn new_statement(&mut self) -> Option<Node> {
         // let_decl | fn_decl | expr ;
-        self.new_let_decl().or_else(|| None)
+        self.decl()
+            .map(Node::Decl)
+            .or_else(|| self.expr().map(Node::Expr))
     }
 
-    fn new_let_decl(&mut self) -> Option<Node> {
-        self.scanner
-            .next_if(|x| x.as_keyword() == Some(Keyword::Let))?;
-        let identifier = self.next_if_identifier().expect("Expected identifier");
-        self.scanner
-            .next_if(|x| *x.kind() == TokenKind::Eq)
-            .expect("Expected = in let decl");
-        let expression = self
-            .new_expr()
-            .expect("Expected expression after `let <ident> = `");
-        Some(Node::LetDecl {
-            identifier,
-            expression,
-        })
+    fn decl(&mut self) -> Option<Decl> {
+        self.let_decl().or_else(|| self.fn_decl())
     }
 
-    fn new_expr(&mut self) -> Option<Expr> {
-        // if_expr | unit_expr | let_expr | literal | unary_expr ;
-        None
-    }
-
-    fn new_fn_decl(&mut self) -> Option<Node> {
+    fn fn_decl(&mut self) -> Option<Decl> {
         let keyword = self.next_if_keyword()?;
         assert!(matches!(keyword, Keyword::Let), "Expected 'let' keyword");
 
@@ -72,12 +58,45 @@ impl Parser {
             .next_if(|x| *x.kind() == TokenKind::Eq)
             .expect("Expected = in let decl");
         let expression = self
-            .new_expr()
+            .expr()
             .expect("Expected expression after `let <ident> = `");
-        Some(Node::LetDecl {
+        Some(Decl::Let {
             identifier,
             expression,
         })
+    }
+
+    fn expr(&mut self) -> Option<Expr> {
+        // if_expr | unit_expr | let_expr | literal | unary_expr ;
+        self.unit_expr()
+    }
+
+    fn let_decl(&mut self) -> Option<Decl> {
+        self.scanner
+            .next_if(|x| x.as_keyword() == Some(Keyword::Let))?;
+        let identifier = self.next_if_identifier().expect("Expected identifier");
+        self.scanner
+            .next_if(|x| *x.kind() == TokenKind::Eq)
+            .expect("Expected = in let decl");
+        let expression = self
+            .expr()
+            .expect("Expected expression after `let <ident> = `");
+        Some(Decl::Let {
+            identifier,
+            expression,
+        })
+    }
+
+    fn unit_expr(&mut self) -> Option<Expr> {
+        let is_unit_expr = matches!(self.scanner.peek()?.kind(), TokenKind::OpenParen)
+            && matches!(self.scanner.peek_next()?.kind(), TokenKind::CloseParen);
+        if is_unit_expr {
+            self.scanner.next();
+            self.scanner.next();
+            Some(Expr::Unit)
+        } else {
+            None
+        }
     }
 
     // TODO: everything below is BAD
@@ -104,7 +123,7 @@ impl Parser {
     fn declaration(&mut self) -> Option<Node> {
         if let Some(_keyword) = self.next_if_keyword() {
             if let Some(identifier) = self.next_if_identifier() {
-                return Some(Node::VarDecl { identifier });
+                // return Some(Node::VarDecl { identifier });
             }
         }
         let statement = self.statement();

@@ -1,6 +1,7 @@
 use crate::lexer::{
+    self,
     error::{LexerError, LexingError},
-    token::{Keyword, Literal, SourceLocation, Token, TokenKind}, self,
+    token::{Keyword, Literal, SourceLocation, Token, TokenKind},
 };
 use std::iter::zip;
 

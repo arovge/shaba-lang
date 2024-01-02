@@ -63,13 +63,11 @@ impl Scanner {
     }
 
     pub fn peek(&self) -> Option<char> {
-        self.chars.get(self.cursor)
-            .map(|c| c.to_owned())
+        self.chars.get(self.cursor).map(|c| c.to_owned())
     }
 
     pub fn peek_next(&self) -> Option<char> {
-        self.chars.get(self.cursor + 1)
-            .map(|c| c.to_owned())
+        self.chars.get(self.cursor + 1).map(|c| c.to_owned())
     }
 
     pub fn next_if(&mut self, condition: impl Fn(char) -> bool) -> Option<char> {

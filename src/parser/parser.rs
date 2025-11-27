@@ -1,5 +1,4 @@
 use super::ast::Decl;
-use super::error::ExpectedToken;
 use super::scanner::Scanner;
 use super::{
     ast::{Cmp, Expr, Node, Operator, UnaryOp},
@@ -97,6 +96,7 @@ impl Parser {
     fn expr(&mut self) -> Option<Expr> {
         // if_expr | unit_expr | literal | unary_expr | binary_expr ;
         self.unit_expr()
+            // .or_else(|| self.comparison_expr())
             .or_else(|| self.literal())
             .or_else(|| self.unary_expr())
     }
@@ -129,10 +129,10 @@ impl Parser {
     // TODO: everything below is BAD
 
     fn equality(&mut self) -> Option<Expr> {
-        let mut expression = self.comparison()?;
+        let mut expression = self.comparison_expr()?;
 
         if let Some(cmp) = self.scanner.next_if_map(|t| t.as_comparison()) {
-            let rhs = self.comparison().unwrap();
+            let rhs = self.comparison_expr().unwrap();
             expression = Expr::Binary {
                 op: Operator::Cmp(cmp),
                 lhs: Box::new(expression),
@@ -144,11 +144,11 @@ impl Parser {
     }
 
     // TODO: make sure next
-    fn comparison(&mut self) -> Option<Expr> {
+    fn comparison_expr(&mut self) -> Option<Expr> {
         let mut expression = self.term()?;
 
         while let Some(cmp) = self.next_if_cmp() {
-            let rhs = self.term().unwrap();
+            let rhs = self.term().expect("expected term after cmp");
             expression = Expr::Binary {
                 op: Operator::Cmp(cmp),
                 lhs: Box::new(expression),
@@ -160,7 +160,7 @@ impl Parser {
     }
 
     fn term(&mut self) -> Option<Expr> {
-        let mut expression = self.factor()?;
+        let mut expression: Expr = self.factor()?;
 
         while let Some(operator) = self.next_if_operator() {
             let rhs = self.factor().unwrap();
@@ -175,7 +175,7 @@ impl Parser {
     }
 
     fn factor(&mut self) -> Option<Expr> {
-        let mut expression = self.unary_expr()?;
+        let mut expression = self.expr()?;
 
         while let Some(operator) = self.next_if_operator() {
             let rhs = self.unary_expr().unwrap();

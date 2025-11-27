@@ -7,6 +7,9 @@ pub mod lexer;
 pub mod scanner;
 pub mod token;
 
+#[cfg(test)]
+mod tests;
+
 pub fn tokenize(source: &str) -> Result<Vec<Token>, LexerError> {
     Lexer::new(source).tokenize()
 }

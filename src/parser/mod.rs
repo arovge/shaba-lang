@@ -6,6 +6,9 @@ pub mod error;
 mod parser;
 mod scanner;
 
+#[cfg(test)]
+mod tests;
+
 pub fn parse(tokens: Vec<Token>) -> Result<Vec<Node>, ParserError> {
     Parser::new(tokens).parse()
 }

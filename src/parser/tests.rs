@@ -40,7 +40,7 @@ fn parses_literals() {
     assert_eq!(result, expected);
 }
 
-// #[test]
+#[test]
 fn parses_unit_let_decl() {
     let input = r#"
         let unit_decl = ()
@@ -70,7 +70,7 @@ fn parses_unit_let_decl() {
     assert_eq!(result, expected);
 }
 
-// #[test]
+#[test]
 fn parses_fn_decl() {
     let input = r#"
         fn some_func() {
@@ -84,7 +84,7 @@ fn parses_fn_decl() {
     assert_eq!(result, expected);
 }
 
-// #[test]
+#[test]
 fn parses_unary_expr() {
     let input = r#"
         let a = -5

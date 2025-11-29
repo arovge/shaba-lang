@@ -1,7 +1,7 @@
 use crate::lexer::token::{Keyword, Literal, Token, TokenKind};
 
 #[derive(Debug, PartialEq)]
-pub enum Operator {
+pub enum Op {
     Plus,
     Minus,
     Negate,
@@ -49,7 +49,7 @@ pub enum Expr {
         expr: Box<Expr>,
     },
     Binary {
-        op: Operator,
+        op: Op,
         lhs: Box<Expr>,
         rhs: Box<Expr>,
     },
@@ -97,13 +97,13 @@ impl Token {
         Some(node)
     }
 
-    pub fn as_operator(&self) -> Option<Operator> {
+    pub fn as_op(&self) -> Option<Op> {
         match self.kind() {
-            TokenKind::Plus => Some(Operator::Plus),
-            TokenKind::Minus => Some(Operator::Minus),
-            TokenKind::Negate => Some(Operator::Negate),
-            TokenKind::Slash => Some(Operator::Slash),
-            TokenKind::Asterisk => Some(Operator::Asterisk),
+            TokenKind::Plus => Some(Op::Plus),
+            TokenKind::Minus => Some(Op::Minus),
+            TokenKind::Negate => Some(Op::Negate),
+            TokenKind::Slash => Some(Op::Slash),
+            TokenKind::Asterisk => Some(Op::Asterisk),
             _ => None,
         }
     }

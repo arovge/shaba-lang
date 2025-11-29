@@ -1,7 +1,7 @@
 use crate::driver::error::DriverError;
 use std::{env, fs::read_to_string};
 
-pub fn read_source() -> Result<String, DriverError> {
+pub fn read_src() -> Result<String, DriverError> {
     let file_path = get_file_flag().ok_or(DriverError::MissingFileFlag)?;
     read_to_string(file_path).or(Err(DriverError::UnableToRead))
 }

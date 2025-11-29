@@ -1,7 +1,7 @@
 use super::ast::Decl;
 use super::scanner::Scanner;
 use super::{
-    ast::{Cmp, Expr, Node, Operator, UnaryOp},
+    ast::{Cmp, Expr, Node, Op, UnaryOp},
     error::{ParserError, ParsingError},
 };
 use crate::lexer::token::{Keyword, Token, TokenKind};
@@ -129,12 +129,12 @@ impl Parser {
     // TODO: everything below is BAD
 
     fn equality(&mut self) -> Option<Expr> {
-        let mut expression = self.comparison_expr()?;
+        let mut expression = self.cmp_expr()?;
 
         if let Some(cmp) = self.scanner.next_if_map(|t| t.as_comparison()) {
-            let rhs = self.comparison_expr().unwrap();
+            let rhs = self.cmp_expr().unwrap();
             expression = Expr::Binary {
-                op: Operator::Cmp(cmp),
+                op: Op::Cmp(cmp),
                 lhs: Box::new(expression),
                 rhs: Box::new(rhs),
             };
@@ -144,13 +144,13 @@ impl Parser {
     }
 
     // TODO: make sure next
-    fn comparison_expr(&mut self) -> Option<Expr> {
+    fn cmp_expr(&mut self) -> Option<Expr> {
         let mut expression = self.term()?;
 
         while let Some(cmp) = self.next_if_cmp() {
             let rhs = self.term().expect("expected term after cmp");
             expression = Expr::Binary {
-                op: Operator::Cmp(cmp),
+                op: Op::Cmp(cmp),
                 lhs: Box::new(expression),
                 rhs: Box::new(rhs),
             };
@@ -162,7 +162,7 @@ impl Parser {
     fn term(&mut self) -> Option<Expr> {
         let mut expression: Expr = self.factor()?;
 
-        while let Some(operator) = self.next_if_operator() {
+        while let Some(operator) = self.next_if_op() {
             let rhs = self.factor().unwrap();
             expression = Expr::Binary {
                 op: operator,
@@ -177,7 +177,7 @@ impl Parser {
     fn factor(&mut self) -> Option<Expr> {
         let mut expression = self.expr()?;
 
-        while let Some(operator) = self.next_if_operator() {
+        while let Some(operator) = self.next_if_op() {
             let rhs = self.unary_expr().unwrap();
             expression = Expr::Binary {
                 op: operator,
@@ -269,8 +269,8 @@ impl Parser {
     //     Some(result)
     // }
 
-    fn next_if_operator(&mut self) -> Option<Operator> {
-        self.scanner.next_if_map(|x| x.as_operator())
+    fn next_if_op(&mut self) -> Option<Op> {
+        self.scanner.next_if_map(|x| x.as_op())
     }
 
     fn next_if_literal_expr(&mut self) -> Option<Expr> {

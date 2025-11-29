@@ -2,7 +2,7 @@ use crate::{
     lexer,
     parser::{
         self,
-        ast::{Cmp, Decl, Expr, Node, Operator, UnaryOp},
+        ast::{Cmp, Decl, Expr, Node, Op, UnaryOp},
         error::ParserError,
     },
 };
@@ -114,7 +114,7 @@ fn parses_comparison() {
                 expr: Box::new(Expr::Int(5)),
             }),
             rhs: Box::new(Expr::Int(4)),
-            op: Operator::Cmp(Cmp::LessThan),
+            op: Op::Cmp(Cmp::LessThan),
         },
     })];
     assert_eq!(result, expected);

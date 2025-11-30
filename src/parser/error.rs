@@ -1,22 +1,16 @@
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct ParserError {
-    errors: Vec<ParsingError>,
-}
-
-impl ParserError {
-    pub fn new(errors: Vec<ParsingError>) -> Self {
-        Self { errors }
-    }
+    pub errors: Vec<ParsingError>,
 }
 
 // TODO: Add source location onto this
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ParsingError {
     ExpectedToken(ExpectedToken),
     Unknown(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ExpectedToken {
     ClosingParen,
 }

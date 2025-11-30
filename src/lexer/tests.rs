@@ -104,6 +104,34 @@ fn tokenizes_empty_str() {
 }
 
 #[test]
+fn tokenizes_greater_than() {
+    let source = r#"
+        18 > 18
+    "#;
+    let result = lexer::tokenize(source).unwrap();
+
+    let expected = vec![
+        Token::new(
+            Literal::Int(18).into(),
+            SourceLocation::new(2, 9),
+            SourceLocation::new(2, 11),
+        ),
+        Token::new(
+            TokenKind::GreaterThan,
+            SourceLocation::new(2, 12),
+            SourceLocation::new(2, 13),
+        ),
+        Token::new(
+            Literal::Int(18).into(),
+            SourceLocation::new(2, 14),
+            SourceLocation::new(2, 16),
+        ),
+    ];
+
+    assert_tokens_eq(result, expected);
+}
+
+#[test]
 fn tokenizes_greater_than_eq() {
     let source = r#"
         18 >= 18
@@ -153,6 +181,34 @@ fn tokenizes_less_than_eq() {
             Literal::Int(18).into(),
             SourceLocation::new(2, 15),
             SourceLocation::new(2, 17),
+        ),
+    ];
+
+    assert_tokens_eq(result, expected);
+}
+
+#[test]
+fn tokenizes_less_than() {
+    let source = r#"
+        14 < 18
+    "#;
+    let result = lexer::tokenize(source).unwrap();
+
+    let expected = vec![
+        Token::new(
+            Literal::Int(14).into(),
+            SourceLocation::new(2, 9),
+            SourceLocation::new(2, 11),
+        ),
+        Token::new(
+            TokenKind::LessThan,
+            SourceLocation::new(2, 12),
+            SourceLocation::new(2, 13),
+        ),
+        Token::new(
+            Literal::Int(18).into(),
+            SourceLocation::new(2, 14),
+            SourceLocation::new(2, 16),
         ),
     ];
 

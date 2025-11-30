@@ -25,7 +25,9 @@ impl Parser {
             statements.push(Node::Expr(self.expr()));
         }
         if !self.errors.is_empty() {
-            return Err(ParserError::new(self.errors));
+            return Err(ParserError {
+                errors: self.errors,
+            });
         }
         Ok(statements)
     }
@@ -195,7 +197,6 @@ impl Parser {
         if closing_paren.is_none() {
             self.errors
                 .push(ParsingError::ExpectedToken(ExpectedToken::ClosingParen));
-            // panic!();
         }
         expr
     }

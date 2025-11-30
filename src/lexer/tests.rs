@@ -38,6 +38,39 @@ fn tokenizes_unknown_lexme() {
 }
 
 #[test]
+fn tokenizes_nil() {
+    let source = r#"
+        let message = nil
+    "#;
+    let result = lexer::tokenize(source).unwrap();
+
+    let expected = vec![
+        Token::new(
+            TokenKind::Keyword(Keyword::Let),
+            SourceLocation::new(2, 9),
+            SourceLocation::new(2, 12),
+        ),
+        Token::new(
+            TokenKind::Identifier(String::from("message")),
+            SourceLocation::new(2, 13),
+            SourceLocation::new(2, 20),
+        ),
+        Token::new(
+            TokenKind::Eq,
+            SourceLocation::new(2, 21),
+            SourceLocation::new(2, 22),
+        ),
+        Token::new(
+            TokenKind::Keyword(Keyword::Nil),
+            SourceLocation::new(2, 23),
+            SourceLocation::new(2, 26),
+        ),
+    ];
+
+    assert_tokens_eq(result, expected);
+}
+
+#[test]
 fn tokenizes_empty_str() {
     let source = r#"
         let message = ""

@@ -26,15 +26,16 @@ pub enum Node {
     Identifier(String),
 }
 
+impl From<Expr> for Node {
+    fn from(expr: Expr) -> Self {
+        Node::Expr(expr)
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Decl {
-    Let {
-        identifier: String,
-        expression: Expr,
-    },
-    Fn {
-        identifier: String,
-    },
+    Let { identifier: String, expr: Expr },
+    Fn { identifier: String },
 }
 
 #[derive(Debug, PartialEq)]
@@ -44,22 +45,36 @@ pub enum Expr {
     Double(f32),
     String(String),
     Bool(bool),
+    Nil,
     Unary {
         op: UnaryOp,
         expr: Box<Expr>,
     },
     Binary {
-        op: Op,
+        op: BinaryOp,
         lhs: Box<Expr>,
         rhs: Box<Expr>,
     },
 }
 
 #[derive(Debug, PartialEq)]
+pub enum BinaryOp {
+    Divide,
+    Multiply,
+    Minus,
+    Plus,
+    GreaterThan,
+    GreaterThanEq,
+    LessThan,
+    LessThanEq,
+    Eq,
+    NotEq,
+}
+
+#[derive(Debug, PartialEq)]
 pub enum UnaryOp {
     Minus,
     Negate,
-    Assign,
 }
 
 impl UnaryOp {
@@ -95,6 +110,30 @@ impl Token {
             Literal::String(n) => Expr::String(n.clone()),
         };
         Some(node)
+    }
+
+    pub fn as_unary_op(&self) -> Option<UnaryOp> {
+        match self.kind() {
+            TokenKind::Minus => Some(UnaryOp::Minus),
+            TokenKind::Negate => Some(UnaryOp::Negate),
+            _ => None,
+        }
+    }
+
+    pub fn as_binary_op(&self) -> Option<BinaryOp> {
+        match self.kind() {
+            TokenKind::Slash => Some(BinaryOp::Divide),
+            TokenKind::Asterisk => Some(BinaryOp::Multiply),
+            TokenKind::Minus => Some(BinaryOp::Minus),
+            TokenKind::Plus => Some(BinaryOp::Plus),
+            TokenKind::GreaterThan => Some(BinaryOp::GreaterThan),
+            TokenKind::GreaterThanEq => Some(BinaryOp::GreaterThanEq),
+            TokenKind::LessThan => Some(BinaryOp::LessThan),
+            TokenKind::LessThanEq => Some(BinaryOp::LessThanEq),
+            TokenKind::NotEq => Some(BinaryOp::NotEq),
+            TokenKind::EqEq => Some(BinaryOp::Eq),
+            _ => None,
+        }
     }
 
     pub fn as_op(&self) -> Option<Op> {

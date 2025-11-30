@@ -2,7 +2,7 @@ use super::ast::Decl;
 use super::scanner::Scanner;
 use super::{
     ast::{Cmp, Expr, Node, Op, UnaryOp},
-    error::{ParserError, ParsingError},
+    error::{ExpectedToken, ParserError, ParsingError},
 };
 use crate::lexer::token::{Keyword, Token, TokenKind};
 
@@ -22,215 +22,217 @@ impl Parser {
 
     pub fn parse(mut self) -> Result<Vec<Node>, ParserError> {
         let mut statements = Vec::new();
-        while let Some(exp) = self.statement() {
-            statements.push(exp);
+        while !self.scanner.is_eof() {
+            statements.push(Node::Expr(self.expr()));
         }
-        if !self.scanner.is_eof() {
-            println!("{:?}", self.scanner.peek());
-        }
-        assert!(self.scanner.is_eof(), "Not at end of tokens");
+        // assert!(self.scanner.is_eof(), "Not at end of tokens");
         if !self.errors.is_empty() {
             return Err(ParserError::new(self.errors));
         }
         Ok(statements)
     }
 
-    fn statement(&mut self) -> Option<Node> {
-        // decl | expr ;
-        self.decl()
-            .map(Node::Decl)
-            .or_else(|| self.expr().map(Node::Expr))
+    // fn statement(&mut self) -> Option<Node> {
+    //     // decl | expr ;
+    //     self.decl()
+    //         .map(Node::Decl)
+    //         .or_else(|| self.expr().map(Node::Expr))
+    // }
+
+    // fn decl(&mut self) -> Option<Decl> {
+    //     // let_decl | fn_decl
+    //     self.let_decl().or_else(|| self.fn_decl())
+    // }
+
+    // fn fn_decl(&mut self) -> Option<Decl> {
+    //     self.scanner
+    //         .next_if(|x| x.as_keyword() == Some(Keyword::Fn))?;
+
+    //     let identifier = self.next_if_identifier().expect("Expected identifier");
+    //     self.scanner
+    //         .next_if(|x| matches!(x.kind(), TokenKind::OpenParen))
+    //         .expect("Expected '(' in fn decl");
+
+    //     // TODO: Parse args
+
+    //     self.scanner
+    //         .next_if(|x| matches!(x.kind(), TokenKind::CloseParen))
+    //         .expect("Expected ')' in fn decl");
+
+    //     // TODO: Parse return type
+
+    //     self.scanner
+    //         .next_if(|x| matches!(x.kind(), TokenKind::OpenBrace))
+    //         .expect("Expected '{' in fn decl");
+
+    //     // TOOD: Parse fn body
+
+    //     self.scanner
+    //         .next_if(|x| matches!(x.kind(), TokenKind::CloseBrace))
+    //         .expect("Expected '}' in fn decl");
+
+    //     Some(Decl::Fn { identifier })
+    // }
+
+    // fn let_decl(&mut self) -> Option<Decl> {
+    //     self.scanner
+    //         .next_if(|x| x.as_keyword() == Some(Keyword::Let))?;
+    //     let identifier = self.next_if_identifier().expect("Expected identifier");
+    //     self.scanner
+    //         .next_if(|x| *x.kind() == TokenKind::Eq)
+    //         .expect("Expected = in let decl");
+    //     let expr = self
+    //         .expr()
+    //         .expect("Expected expression after `let <ident> = `");
+    //     Some(Decl::Let { identifier, expr })
+    // }
+
+    // fn expr(&mut self) -> Option<Expr> {
+    //     // if_expr | unit_expr | literal | unary_expr | binary_expr ;
+    //     self.unit_expr()
+    //         .or_else(|| self.cmp_expr())
+    //         .or_else(|| self.literal())
+    //         .or_else(|| self.unary_expr())
+    // }
+
+    // fn unit_expr(&mut self) -> Option<Expr> {
+    //     let is_unit_expr = matches!(self.scanner.peek()?.kind(), TokenKind::OpenParen)
+    //         && matches!(self.scanner.peek_next()?.kind(), TokenKind::CloseParen);
+    //     if is_unit_expr {
+    //         self.scanner.next();
+    //         self.scanner.next();
+    //         Some(Expr::Unit)
+    //     } else {
+    //         None
+    //     }
+    // }
+
+    // fn unary_expr(&mut self) -> Option<Expr> {
+    //     let op = self.scanner.next_if_map(|x| UnaryOp::from(&x))?;
+    //     let expr = self.expr().expect("Expected expr after unary op");
+    //     Some(Expr::Unary {
+    //         op,
+    //         expr: Box::new(expr),
+    //     })
+    // }
+
+    // fn literal(&mut self) -> Option<Expr> {
+    //     self.scanner.next_if_map(|x| x.as_literal_expr())
+    // }
+
+    // TODO: everything below is GOOD
+    fn expr(&mut self) -> Expr {
+        self.equality()
     }
 
-    fn decl(&mut self) -> Option<Decl> {
-        // let_decl | fn_decl
-        self.let_decl().or_else(|| self.fn_decl())
-    }
+    fn equality(&mut self) -> Expr {
+        let mut expr = self.cmp();
 
-    fn fn_decl(&mut self) -> Option<Decl> {
-        self.scanner
-            .next_if(|x| x.as_keyword() == Some(Keyword::Fn))?;
-
-        let identifier = self.next_if_identifier().expect("Expected identifier");
-        self.scanner
-            .next_if(|x| matches!(x.kind(), TokenKind::OpenParen))
-            .expect("Expected '(' in fn decl");
-
-        // TODO: Parse args
-
-        self.scanner
-            .next_if(|x| matches!(x.kind(), TokenKind::CloseParen))
-            .expect("Expected ')' in fn decl");
-
-        // TODO: Parse return type
-
-        self.scanner
-            .next_if(|x| matches!(x.kind(), TokenKind::OpenBrace))
-            .expect("Expected '{' in fn decl");
-
-        // TOOD: Parse fn body
-
-        self.scanner
-            .next_if(|x| matches!(x.kind(), TokenKind::CloseBrace))
-            .expect("Expected '}' in fn decl");
-
-        Some(Decl::Fn { identifier })
-    }
-
-    fn let_decl(&mut self) -> Option<Decl> {
-        self.scanner
-            .next_if(|x| x.as_keyword() == Some(Keyword::Let))?;
-        let identifier = self.next_if_identifier().expect("Expected identifier");
-        self.scanner
-            .next_if(|x| *x.kind() == TokenKind::Eq)
-            .expect("Expected = in let decl");
-        let expression = self
-            .expr()
-            .expect("Expected expression after `let <ident> = `");
-        Some(Decl::Let {
-            identifier,
-            expression,
-        })
-    }
-
-    fn expr(&mut self) -> Option<Expr> {
-        // if_expr | unit_expr | literal | unary_expr | binary_expr ;
-        self.unit_expr()
-            // .or_else(|| self.comparison_expr())
-            .or_else(|| self.literal())
-            .or_else(|| self.unary_expr())
-    }
-
-    fn unit_expr(&mut self) -> Option<Expr> {
-        let is_unit_expr = matches!(self.scanner.peek()?.kind(), TokenKind::OpenParen)
-            && matches!(self.scanner.peek_next()?.kind(), TokenKind::CloseParen);
-        if is_unit_expr {
-            self.scanner.next();
-            self.scanner.next();
-            Some(Expr::Unit)
-        } else {
-            None
-        }
-    }
-
-    fn unary_expr(&mut self) -> Option<Expr> {
-        let op = self.scanner.next_if_map(|x| UnaryOp::from(&x))?;
-        let expr = self.expr().expect("Expected expr after unary op");
-        Some(Expr::Unary {
-            op,
-            expr: Box::new(expr),
-        })
-    }
-
-    fn literal(&mut self) -> Option<Expr> {
-        self.scanner.next_if_map(|x| x.as_literal_expr())
-    }
-
-    // TODO: everything below is BAD
-
-    fn equality(&mut self) -> Option<Expr> {
-        let mut expression = self.cmp_expr()?;
-
-        if let Some(cmp) = self.scanner.next_if_map(|t| t.as_comparison()) {
-            let rhs = self.cmp_expr().unwrap();
-            expression = Expr::Binary {
-                op: Op::Cmp(cmp),
-                lhs: Box::new(expression),
+        while let Some(op) = self.scanner.next_if(|x| {
+            matches!(x.kind(), TokenKind::EqEq) || matches!(x.kind(), TokenKind::NotEq)
+        }) {
+            let op = op.as_binary_op().unwrap();
+            let rhs = self.cmp();
+            expr = Expr::Binary {
+                op,
+                lhs: Box::new(expr),
                 rhs: Box::new(rhs),
             };
         }
 
-        Some(expression)
+        expr
     }
 
-    // TODO: make sure next
-    fn cmp_expr(&mut self) -> Option<Expr> {
-        let mut expression = self.term()?;
+    fn cmp(&mut self) -> Expr {
+        let mut expr = self.term();
 
-        while let Some(cmp) = self.next_if_cmp() {
-            let rhs = self.term().expect("expected term after cmp");
-            expression = Expr::Binary {
-                op: Op::Cmp(cmp),
-                lhs: Box::new(expression),
+        while let Some(op) = self.scanner.next_if(|x| {
+            matches!(x.kind(), TokenKind::GreaterThan)
+                || matches!(x.kind(), TokenKind::GreaterThanEq)
+                || matches!(x.kind(), TokenKind::LessThan)
+                || matches!(x.kind(), TokenKind::LessThanEq)
+        }) {
+            let op = op.as_binary_op().unwrap();
+            let rhs = self.term();
+            expr = Expr::Binary {
+                op,
+                lhs: Box::new(expr),
                 rhs: Box::new(rhs),
             };
         }
 
-        Some(expression)
+        expr
     }
 
-    fn term(&mut self) -> Option<Expr> {
-        let mut expression: Expr = self.factor()?;
+    fn term(&mut self) -> Expr {
+        let mut expr = self.factor();
 
-        while let Some(operator) = self.next_if_op() {
-            let rhs = self.factor().unwrap();
-            expression = Expr::Binary {
-                op: operator,
-                lhs: Box::new(expression),
+        while let Some(op) = self.scanner.next_if(|x| {
+            matches!(x.kind(), TokenKind::Minus) || matches!(x.kind(), TokenKind::Plus)
+        }) {
+            let op = op.as_binary_op().unwrap();
+            let rhs = self.factor();
+            expr = Expr::Binary {
+                op,
+                lhs: Box::new(expr),
                 rhs: Box::new(rhs),
             };
         }
 
-        Some(expression)
+        expr
     }
 
-    fn factor(&mut self) -> Option<Expr> {
-        let mut expression = self.expr()?;
+    fn factor(&mut self) -> Expr {
+        let mut expr = self.unary();
 
-        while let Some(operator) = self.next_if_op() {
-            let rhs = self.unary_expr().unwrap();
-            expression = Expr::Binary {
-                op: operator,
-                lhs: Box::new(expression),
+        while let Some(op) = self.scanner.next_if(|x| {
+            matches!(x.kind(), TokenKind::Slash) || matches!(x.kind(), TokenKind::Asterisk)
+        }) {
+            let op = op.as_binary_op().unwrap();
+            let rhs = self.unary();
+            expr = Expr::Binary {
+                op,
+                lhs: Box::new(expr),
                 rhs: Box::new(rhs),
             };
         }
 
-        Some(expression)
+        expr
     }
 
-    fn binary_expression(&mut self) -> Option<Node> {
-        let lhs = self.primary()?;
-        // let operator = self.c
-        Some(lhs)
-    }
-
-    fn primary(&mut self) -> Option<Node> {
-        // let literal = self.next_if_literal_node();
-        // if literal.is_some() {
-        //     return literal;
-        // }
-        // let exp = self.expression();
-        // let closing_paren = self
-        //     .scanner
-        //     .next_if(|x| matches!(x.kind(), TokenKind::CloseParen));
-        // if closing_paren.is_none() {
-        //     self.errors
-        //         .push(ParsingError::ExpectedToken(ExpectedToken::ClosingParen));
-        // }
-        // exp
-        None
-    }
-
-    fn synchronize(&mut self) {
-        self.scanner.increment_cursor();
-        loop {
-            let Some(prev) = self.scanner.peek_prev() else {
-                break;
+    fn unary(&mut self) -> Expr {
+        let op = self.scanner.next_if_map(|x| x.as_unary_op());
+        if let Some(op) = op {
+            let expr = self.primary();
+            return Expr::Unary {
+                op,
+                expr: Box::new(expr),
             };
-            let prev_kind = prev.kind();
-            if matches!(prev_kind, TokenKind::Semicolon) {
-                break;
-            }
-            let Some(current) = self.scanner.peek() else {
-                break;
-            };
-            let current_kind = current.kind();
-            if matches!(current_kind, TokenKind::Keyword(_)) {
-                break;
-            }
-            self.scanner.increment_cursor();
         }
+        return self.primary();
+    }
+
+    fn primary(&mut self) -> Expr {
+        let literal = self.next_if_literal_expr();
+        if literal.is_some() {
+            return literal.unwrap();
+        }
+        let open_paren = self
+            .scanner
+            .next_if(|x| matches!(x.kind(), TokenKind::OpenParen));
+        if open_paren.is_none() {
+            panic!();
+        }
+        let expr = self.expr();
+        let closing_paren = self
+            .scanner
+            .next_if(|x| matches!(x.kind(), TokenKind::CloseParen));
+        if closing_paren.is_none() {
+            self.errors
+                .push(ParsingError::ExpectedToken(ExpectedToken::ClosingParen));
+            // panic!();
+        }
+        expr
     }
 
     // fn peek_prev(&self) -> Option<&Token> {

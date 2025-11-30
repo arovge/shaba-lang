@@ -30,3 +30,15 @@ int_literal     : 0-9 + ;
 // currently the lexer doesn't preserve syntax trivia so this doesn't matter
 comment         : line_comment ;
 line_comment    : '//' non_eol ;
+
+// ---
+expression        : equality
+equality          : comparison ( ( "==" | "!=" ) comparison )*
+comparison        : term ( ( ">" | ">=" | "<" | "<=" ) term )*
+term              : factor ( ( "-" | "+" ) factor )*
+factor            : ( unary ( "/" | "*" ) unary )*
+
+unary             : ('!' | '-') unary | literal
+
+// i.e. primary
+literal           : number | string | 'true' | 'false' | 'nil' | '(' expr ')'

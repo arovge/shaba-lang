@@ -5,12 +5,19 @@ use crate::lexer::{
 };
 use std::iter::zip;
 
+fn try_parse(input: &str) -> Result<Vec<Token>, LexerError> {
+    lexer::tokenize(input)
+}
+
+fn parse(input: &str) -> Vec<Token> {
+    try_parse(input).unwrap()
+}
 #[test]
 fn unterminated_str() {
-    let source = r#"
+    let input = r#"
         let person = "Bob
     "#;
-    let result = lexer::tokenize(source).unwrap_err();
+    let result = try_parse(input).unwrap_err();
 
     let expected = LexerError::new(
         LexingError::UnterminatedString,
@@ -23,10 +30,10 @@ fn unterminated_str() {
 
 #[test]
 fn unknown_lexme() {
-    let source = r#"
+    let input = r#"
         let amogus = ඞ
     "#;
-    let result = lexer::tokenize(source).unwrap_err();
+    let result = try_parse(input).unwrap_err();
 
     let expected = LexerError::new(
         LexingError::UnknownLexme('ඞ'),
@@ -39,10 +46,10 @@ fn unknown_lexme() {
 
 #[test]
 fn nil() {
-    let source = r#"
+    let input = r#"
         let message = nil
     "#;
-    let result = lexer::tokenize(source).unwrap();
+    let result = parse(input);
 
     let expected = vec![
         Token::new(
@@ -72,10 +79,10 @@ fn nil() {
 
 #[test]
 fn empty_str() {
-    let source = r#"
+    let input = r#"
         let message = ""
     "#;
-    let result = lexer::tokenize(source).unwrap();
+    let result = parse(input);
 
     let expected = vec![
         Token::new(
@@ -105,10 +112,10 @@ fn empty_str() {
 
 #[test]
 fn greater_than() {
-    let source = r#"
+    let input = r#"
         18 > 18
     "#;
-    let result = lexer::tokenize(source).unwrap();
+    let result = parse(input);
 
     let expected = vec![
         Token::new(
@@ -133,10 +140,10 @@ fn greater_than() {
 
 #[test]
 fn greater_than_eq() {
-    let source = r#"
+    let input = r#"
         18 >= 18
     "#;
-    let result = lexer::tokenize(source).unwrap();
+    let result = parse(input);
 
     let expected = vec![
         Token::new(
@@ -161,10 +168,10 @@ fn greater_than_eq() {
 
 #[test]
 fn less_than_eq() {
-    let source = r#"
+    let input = r#"
         14 <= 18
     "#;
-    let result = lexer::tokenize(source).unwrap();
+    let result = parse(input);
 
     let expected = vec![
         Token::new(
@@ -189,10 +196,10 @@ fn less_than_eq() {
 
 #[test]
 fn less_than() {
-    let source = r#"
+    let input = r#"
         14 < 18
     "#;
-    let result = lexer::tokenize(source).unwrap();
+    let result = parse(input);
 
     let expected = vec![
         Token::new(
@@ -217,10 +224,10 @@ fn less_than() {
 
 #[test]
 fn not_eq() {
-    let source = r#"
+    let input = r#"
         0 != 1
     "#;
-    let result = lexer::tokenize(source).unwrap();
+    let result = parse(input);
 
     let expected = vec![
         Token::new(
@@ -245,10 +252,10 @@ fn not_eq() {
 
 #[test]
 fn eq_eq() {
-    let source = r#"
+    let input = r#"
         1 == 1
     "#;
-    let result = lexer::tokenize(source).unwrap();
+    let result = parse(input);
 
     let expected = vec![
         Token::new(
@@ -273,7 +280,7 @@ fn eq_eq() {
 
 #[test]
 fn skips_whitespace_and_comments() {
-    let source = r#"
+    let input = r#"
         // this is a load bearing print statement
         // please do not remove or else the whole program will break
         print("domo arigato, mr. roboto")
@@ -281,7 +288,7 @@ fn skips_whitespace_and_comments() {
         // SHABA.GOV/HTTPS://SHABA
         let forget = "about it"
     "#;
-    let result: Vec<Token> = lexer::tokenize(source).unwrap();
+    let result: Vec<Token> = parse(input);
 
     let expected = vec![
         Token::new(
@@ -331,10 +338,10 @@ fn skips_whitespace_and_comments() {
 
 #[test]
 fn literal_bool() {
-    let source = r#"
+    let input = r#"
         let isAustinCool = true
     "#;
-    let result = lexer::tokenize(source).unwrap();
+    let result = parse(input);
 
     let expected = vec![
         Token::new(
@@ -364,10 +371,10 @@ fn literal_bool() {
 
 #[test]
 fn literal_str() {
-    let source = r#"
+    let input = r#"
         "hello, world!"
     "#;
-    let result = lexer::tokenize(source).unwrap();
+    let result = parse(input);
 
     let expected = vec![Token::new(
         Literal::String(String::from("hello, world!")).into(),
@@ -380,10 +387,10 @@ fn literal_str() {
 
 #[test]
 fn literal_int() {
-    let source = r#"
+    let input = r#"
         let age = 24
     "#;
-    let result = lexer::tokenize(source).unwrap();
+    let result = parse(input);
 
     let expected = vec![
         Token::new(
@@ -412,15 +419,127 @@ fn literal_int() {
 }
 
 #[test]
+fn division() {
+    let input = r#"
+        3 / 4
+    "#;
+    let result = parse(input);
+
+    let expected: Vec<Token> = vec![
+        Token::new(
+            Literal::Int(3).into(),
+            SourceLocation::new(2, 9),
+            SourceLocation::new(2, 10),
+        ),
+        Token::new(
+            TokenKind::Slash,
+            SourceLocation::new(2, 11),
+            SourceLocation::new(2, 12),
+        ),
+        Token::new(
+            Literal::Int(4).into(),
+            SourceLocation::new(2, 13),
+            SourceLocation::new(2, 14),
+        ),
+    ];
+
+    assert_tokens_eq(result, expected);
+}
+
+#[test]
+fn multiplication() {
+    let input = r#"
+        3 * 4
+    "#;
+    let result = parse(input);
+
+    let expected: Vec<Token> = vec![
+        Token::new(
+            Literal::Int(3).into(),
+            SourceLocation::new(2, 9),
+            SourceLocation::new(2, 10),
+        ),
+        Token::new(
+            TokenKind::Asterisk,
+            SourceLocation::new(2, 11),
+            SourceLocation::new(2, 12),
+        ),
+        Token::new(
+            Literal::Int(4).into(),
+            SourceLocation::new(2, 13),
+            SourceLocation::new(2, 14),
+        ),
+    ];
+
+    assert_tokens_eq(result, expected);
+}
+
+#[test]
+fn addition() {
+    let input = r#"
+        3 + 4
+    "#;
+    let result = parse(input);
+
+    let expected: Vec<Token> = vec![
+        Token::new(
+            Literal::Int(3).into(),
+            SourceLocation::new(2, 9),
+            SourceLocation::new(2, 10),
+        ),
+        Token::new(
+            TokenKind::Plus,
+            SourceLocation::new(2, 11),
+            SourceLocation::new(2, 12),
+        ),
+        Token::new(
+            Literal::Int(4).into(),
+            SourceLocation::new(2, 13),
+            SourceLocation::new(2, 14),
+        ),
+    ];
+
+    assert_tokens_eq(result, expected);
+}
+
+#[test]
+fn subtraction() {
+    let input = r#"
+        3 - 4
+    "#;
+    let result = parse(input);
+
+    let expected: Vec<Token> = vec![
+        Token::new(
+            Literal::Int(3).into(),
+            SourceLocation::new(2, 9),
+            SourceLocation::new(2, 10),
+        ),
+        Token::new(
+            TokenKind::Minus,
+            SourceLocation::new(2, 11),
+            SourceLocation::new(2, 12),
+        ),
+        Token::new(
+            Literal::Int(4).into(),
+            SourceLocation::new(2, 13),
+            SourceLocation::new(2, 14),
+        ),
+    ];
+
+    assert_tokens_eq(result, expected);
+}
+
+#[test]
 fn snippet() {
-    let source = r#"
+    let input = r#"
         let str = "hello, world!"
         print(str)
 
         let num = 1 + 1
         let isNumGreaterThanZero = num > 0
     "#;
-    let result = lexer::tokenize(source).unwrap();
+    let result = parse(input);
 
     let expected: Vec<Token> = vec![
         Token::new(

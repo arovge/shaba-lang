@@ -142,7 +142,6 @@ fn term() {
 }
 
 #[test]
-#[ignore]
 fn factor() {
     let input = r#"
         1 / 2

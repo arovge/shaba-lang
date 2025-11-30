@@ -6,7 +6,7 @@ use crate::lexer::{
 use std::iter::zip;
 
 #[test]
-fn tokenizes_unterminated_str() {
+fn unterminated_str() {
     let source = r#"
         let person = "Bob
     "#;
@@ -22,7 +22,7 @@ fn tokenizes_unterminated_str() {
 }
 
 #[test]
-fn tokenizes_unknown_lexme() {
+fn unknown_lexme() {
     let source = r#"
         let amogus = ඞ
     "#;
@@ -38,7 +38,7 @@ fn tokenizes_unknown_lexme() {
 }
 
 #[test]
-fn tokenizes_nil() {
+fn nil() {
     let source = r#"
         let message = nil
     "#;
@@ -71,7 +71,7 @@ fn tokenizes_nil() {
 }
 
 #[test]
-fn tokenizes_empty_str() {
+fn empty_str() {
     let source = r#"
         let message = ""
     "#;
@@ -104,7 +104,7 @@ fn tokenizes_empty_str() {
 }
 
 #[test]
-fn tokenizes_greater_than() {
+fn greater_than() {
     let source = r#"
         18 > 18
     "#;
@@ -132,7 +132,7 @@ fn tokenizes_greater_than() {
 }
 
 #[test]
-fn tokenizes_greater_than_eq() {
+fn greater_than_eq() {
     let source = r#"
         18 >= 18
     "#;
@@ -160,7 +160,7 @@ fn tokenizes_greater_than_eq() {
 }
 
 #[test]
-fn tokenizes_less_than_eq() {
+fn less_than_eq() {
     let source = r#"
         14 <= 18
     "#;
@@ -188,7 +188,7 @@ fn tokenizes_less_than_eq() {
 }
 
 #[test]
-fn tokenizes_less_than() {
+fn less_than() {
     let source = r#"
         14 < 18
     "#;
@@ -216,7 +216,7 @@ fn tokenizes_less_than() {
 }
 
 #[test]
-fn tokenizes_not_eq() {
+fn not_eq() {
     let source = r#"
         0 != 1
     "#;
@@ -244,7 +244,7 @@ fn tokenizes_not_eq() {
 }
 
 #[test]
-fn tokenizes_eq_eq() {
+fn eq_eq() {
     let source = r#"
         1 == 1
     "#;
@@ -272,7 +272,7 @@ fn tokenizes_eq_eq() {
 }
 
 #[test]
-fn tokenizes_skips_whitespace_and_comments() {
+fn skips_whitespace_and_comments() {
     let source = r#"
         // this is a load bearing print statement
         // please do not remove or else the whole program will break
@@ -330,7 +330,7 @@ fn tokenizes_skips_whitespace_and_comments() {
 }
 
 #[test]
-fn tokenizes_literal_bool() {
+fn literal_bool() {
     let source = r#"
         let isAustinCool = true
     "#;
@@ -363,7 +363,7 @@ fn tokenizes_literal_bool() {
 }
 
 #[test]
-fn tokenizes_literal_str() {
+fn literal_str() {
     let source = r#"
         "hello, world!"
     "#;
@@ -379,7 +379,7 @@ fn tokenizes_literal_str() {
 }
 
 #[test]
-fn tokenizes_literal_integer() {
+fn literal_int() {
     let source = r#"
         let age = 24
     "#;
@@ -412,7 +412,7 @@ fn tokenizes_literal_integer() {
 }
 
 #[test]
-fn tokenizes_snippet() {
+fn snippet() {
     let source = r#"
         let str = "hello, world!"
         print(str)

@@ -18,7 +18,7 @@ fn parse_str(input: &str) -> Vec<Node> {
 
 #[test]
 #[ignore]
-fn parses_unit() {
+fn unit() {
     let input = "()";
     let result = parse_str(input);
     let expected = vec![Node::Expr(Expr::Unit)];
@@ -26,7 +26,7 @@ fn parses_unit() {
 }
 
 #[test]
-fn parses_literal_int() {
+fn literal_int() {
     let input = "1";
     let result = parse_str(input);
     let expected = vec![Node::Expr(Expr::Int(1))];
@@ -35,7 +35,7 @@ fn parses_literal_int() {
 
 #[test]
 #[ignore]
-fn parses_literal_double() {
+fn literal_double() {
     let input = "1.234";
     let result = parse_str(input);
     let expected = vec![Node::Expr(Expr::Double(1.234))];
@@ -43,7 +43,7 @@ fn parses_literal_double() {
 }
 
 #[test]
-fn parses_literal_str() {
+fn literal_str() {
     let input = "\"eeeoo\"";
     let result = parse_str(input);
     let expected = vec![Node::Expr(Expr::String("eeeoo".to_string()))];
@@ -51,7 +51,7 @@ fn parses_literal_str() {
 }
 
 #[test]
-fn parses_literal_bool() {
+fn literal_bool() {
     let input = r#"
         true
         false
@@ -62,7 +62,7 @@ fn parses_literal_bool() {
 }
 
 #[test]
-fn parses_equality() {
+fn equality() {
     let input = r#"
         1 == 1
         1 != 21
@@ -85,7 +85,7 @@ fn parses_equality() {
 
 #[test]
 #[ignore]
-fn parses_cmp() {
+fn cmp() {
     let input = r#"
         11 > 8
         50 >= 50
@@ -120,7 +120,7 @@ fn parses_cmp() {
 
 #[test]
 #[ignore]
-fn parses_term() {
+fn term() {
     let input = r#"
         1 / 2
         3 * 4
@@ -143,7 +143,7 @@ fn parses_term() {
 
 #[test]
 #[ignore]
-fn parses_factor() {
+fn factor() {
     let input = r#"
         1 / 2
         3 * 4
@@ -165,7 +165,7 @@ fn parses_factor() {
 }
 
 #[test]
-fn parses_unary() {
+fn unary() {
     let input = r#"
         -7
         !21
@@ -196,6 +196,20 @@ fn parses_unary() {
 }
 
 #[test]
+fn grouping() {
+    let input = r#"
+        (5 == 5)
+    "#;
+    let result = parse_str(input);
+    let expected = vec![Node::Expr(Expr::Binary {
+        op: BinaryOp::Eq,
+        lhs: Box::new(Expr::Int(5)),
+        rhs: Box::new(Expr::Int(5)),
+    })];
+    assert_eq!(result, expected);
+}
+
+#[test]
 fn unterminated_grouping() {
     let input = r#"
         (5 > 3
@@ -209,7 +223,22 @@ fn unterminated_grouping() {
 
 #[test]
 #[ignore]
-fn parses_unit_let_decl() {
+fn fn_decl() {
+    let input = r#"
+        fn some_func() {
+
+        }
+    "#;
+    let result = parse_str(input);
+    let expected = vec![Node::Decl(Decl::Fn {
+        identifier: "some_func".to_string(),
+    })];
+    assert_eq!(result, expected);
+}
+
+#[test]
+#[ignore]
+fn decl_let() {
     let input = r#"
         let unit_decl = ()
         let int_decl = 1234
@@ -235,21 +264,6 @@ fn parses_unit_let_decl() {
             expr: Expr::Bool(false),
         }),
     ];
-    assert_eq!(result, expected);
-}
-
-#[test]
-#[ignore]
-fn parses_fn_decl() {
-    let input = r#"
-        fn some_func() {
-
-        }
-    "#;
-    let result = parse_str(input);
-    let expected = vec![Node::Decl(Decl::Fn {
-        identifier: "some_func".to_string(),
-    })];
     assert_eq!(result, expected);
 }
 

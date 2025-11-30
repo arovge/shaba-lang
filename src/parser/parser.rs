@@ -188,11 +188,9 @@ impl Parser {
         if let Some(literal) = literal {
             return literal;
         }
-        let open_paren = self.next_if(|x| matches!(x.kind(), TokenKind::OpenParen));
-        if open_paren.is_some() {
+        if self.next_token(TokenKind::OpenParen) {
             let expr = self.expr();
-            let closing_paren = self.next_if(|x| matches!(x.kind(), TokenKind::CloseParen));
-            if closing_paren.is_none() {
+            if !self.next_token(TokenKind::CloseParen) {
                 self.errors
                     .push(ParsingError::ExpectedToken(ExpectedToken::ClosingParen));
             }
@@ -202,19 +200,15 @@ impl Parser {
         panic!("no literal to parse");
     }
 
+    fn next_token(&mut self, kind: TokenKind) -> bool {
+        self.next_if(|token| token.kind() == &kind).is_some()
+    }
+
     fn next_if(&mut self, cond: impl Fn(Token) -> bool) -> Option<Token> {
         self.scanner.next_if(cond)
     }
 
     fn next_if_map<T>(&mut self, cond: impl Fn(Token) -> Option<T>) -> Option<T> {
         self.scanner.next_if_map(cond)
-    }
-
-    fn next_if_keyword(&mut self) -> Option<Keyword> {
-        self.scanner.next_if_map(|x| x.as_keyword())
-    }
-
-    fn next_if_identifier(&mut self) -> Option<String> {
-        self.scanner.next_if_map(|x| x.as_identifier())
     }
 }

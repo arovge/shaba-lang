@@ -88,18 +88,7 @@ impl UnaryOp {
 }
 
 impl Token {
-    pub fn as_comparison(&self) -> Option<Cmp> {
-        match self.kind() {
-            TokenKind::LessThan => Cmp::LessThan.into(),
-            TokenKind::LessThanEq => Cmp::LessThanEq.into(),
-            TokenKind::Eq => Cmp::Eq.into(),
-            TokenKind::GreaterThan => Cmp::GreaterThan.into(),
-            TokenKind::GreaterThanEq => Cmp::GreaterThanEq.into(),
-            _ => None,
-        }
-    }
-
-    pub fn as_literal_expr(&self) -> Option<Expr> {
+    pub fn as_literal(&self) -> Option<Expr> {
         let TokenKind::Literal(literal) = self.kind() else {
             return None;
         };
@@ -120,18 +109,36 @@ impl Token {
         }
     }
 
-    pub fn as_binary_op(&self) -> Option<BinaryOp> {
+    pub fn as_equality_op(&self) -> Option<BinaryOp> {
         match self.kind() {
-            TokenKind::Slash => Some(BinaryOp::Divide),
-            TokenKind::Asterisk => Some(BinaryOp::Multiply),
-            TokenKind::Minus => Some(BinaryOp::Minus),
-            TokenKind::Plus => Some(BinaryOp::Plus),
+            TokenKind::EqEq => Some(BinaryOp::Eq),
+            TokenKind::NotEq => Some(BinaryOp::NotEq),
+            _ => None,
+        }
+    }
+
+    pub fn as_cmp_op(&self) -> Option<BinaryOp> {
+        match self.kind() {
             TokenKind::GreaterThan => Some(BinaryOp::GreaterThan),
             TokenKind::GreaterThanEq => Some(BinaryOp::GreaterThanEq),
             TokenKind::LessThan => Some(BinaryOp::LessThan),
             TokenKind::LessThanEq => Some(BinaryOp::LessThanEq),
-            TokenKind::NotEq => Some(BinaryOp::NotEq),
-            TokenKind::EqEq => Some(BinaryOp::Eq),
+            _ => None,
+        }
+    }
+
+    pub fn as_term_op(&self) -> Option<BinaryOp> {
+        match self.kind() {
+            TokenKind::Plus => Some(BinaryOp::Plus),
+            TokenKind::Minus => Some(BinaryOp::Minus),
+            _ => None,
+        }
+    }
+
+    pub fn as_factor_op(&self) -> Option<BinaryOp> {
+        match self.kind() {
+            TokenKind::Slash => Some(BinaryOp::Divide),
+            TokenKind::Asterisk => Some(BinaryOp::Multiply),
             _ => None,
         }
     }

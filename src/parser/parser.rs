@@ -1,7 +1,6 @@
-use super::ast::Decl;
 use super::scanner::Scanner;
 use super::{
-    ast::{Cmp, Expr, Node, Op, UnaryOp},
+    ast::{Expr, Node},
     error::{ExpectedToken, ParserError, ParsingError},
 };
 use crate::lexer::token::{Keyword, Token, TokenKind};
@@ -25,7 +24,6 @@ impl Parser {
         while !self.scanner.is_eof() {
             statements.push(Node::Expr(self.expr()));
         }
-        // assert!(self.scanner.is_eof(), "Not at end of tokens");
         if !self.errors.is_empty() {
             return Err(ParserError::new(self.errors));
         }
@@ -107,20 +105,6 @@ impl Parser {
     //     }
     // }
 
-    // fn unary_expr(&mut self) -> Option<Expr> {
-    //     let op = self.scanner.next_if_map(|x| UnaryOp::from(&x))?;
-    //     let expr = self.expr().expect("Expected expr after unary op");
-    //     Some(Expr::Unary {
-    //         op,
-    //         expr: Box::new(expr),
-    //     })
-    // }
-
-    // fn literal(&mut self) -> Option<Expr> {
-    //     self.scanner.next_if_map(|x| x.as_literal_expr())
-    // }
-
-    // TODO: everything below is GOOD
     fn expr(&mut self) -> Expr {
         self.equality()
     }
@@ -128,10 +112,7 @@ impl Parser {
     fn equality(&mut self) -> Expr {
         let mut expr = self.cmp();
 
-        while let Some(op) = self.scanner.next_if(|x| {
-            matches!(x.kind(), TokenKind::EqEq) || matches!(x.kind(), TokenKind::NotEq)
-        }) {
-            let op = op.as_binary_op().unwrap();
+        while let Some(op) = self.next_if_map(|x| x.as_equality_op()) {
             let rhs = self.cmp();
             expr = Expr::Binary {
                 op,
@@ -146,13 +127,7 @@ impl Parser {
     fn cmp(&mut self) -> Expr {
         let mut expr = self.term();
 
-        while let Some(op) = self.scanner.next_if(|x| {
-            matches!(x.kind(), TokenKind::GreaterThan)
-                || matches!(x.kind(), TokenKind::GreaterThanEq)
-                || matches!(x.kind(), TokenKind::LessThan)
-                || matches!(x.kind(), TokenKind::LessThanEq)
-        }) {
-            let op = op.as_binary_op().unwrap();
+        while let Some(op) = self.next_if_map(|x| x.as_cmp_op()) {
             let rhs = self.term();
             expr = Expr::Binary {
                 op,
@@ -167,10 +142,7 @@ impl Parser {
     fn term(&mut self) -> Expr {
         let mut expr = self.factor();
 
-        while let Some(op) = self.scanner.next_if(|x| {
-            matches!(x.kind(), TokenKind::Minus) || matches!(x.kind(), TokenKind::Plus)
-        }) {
-            let op = op.as_binary_op().unwrap();
+        while let Some(op) = self.next_if_map(|x| x.as_term_op()) {
             let rhs = self.factor();
             expr = Expr::Binary {
                 op,
@@ -185,10 +157,7 @@ impl Parser {
     fn factor(&mut self) -> Expr {
         let mut expr = self.unary();
 
-        while let Some(op) = self.scanner.next_if(|x| {
-            matches!(x.kind(), TokenKind::Slash) || matches!(x.kind(), TokenKind::Asterisk)
-        }) {
-            let op = op.as_binary_op().unwrap();
+        while let Some(op) = self.next_if_map(|x| x.as_factor_op()) {
             let rhs = self.unary();
             expr = Expr::Binary {
                 op,
@@ -201,32 +170,28 @@ impl Parser {
     }
 
     fn unary(&mut self) -> Expr {
-        let op = self.scanner.next_if_map(|x| x.as_unary_op());
+        let op = self.next_if_map(|x| x.as_unary_op());
         if let Some(op) = op {
-            let expr = self.primary();
+            let expr = self.literal();
             return Expr::Unary {
                 op,
                 expr: Box::new(expr),
             };
         }
-        return self.primary();
+        return self.literal();
     }
 
-    fn primary(&mut self) -> Expr {
-        let literal = self.next_if_literal_expr();
+    fn literal(&mut self) -> Expr {
+        let literal = self.next_if_map(|x| x.as_literal());
         if literal.is_some() {
             return literal.unwrap();
         }
-        let open_paren = self
-            .scanner
-            .next_if(|x| matches!(x.kind(), TokenKind::OpenParen));
+        let open_paren = self.next_if(|x| matches!(x.kind(), TokenKind::OpenParen));
         if open_paren.is_none() {
             panic!();
         }
         let expr = self.expr();
-        let closing_paren = self
-            .scanner
-            .next_if(|x| matches!(x.kind(), TokenKind::CloseParen));
+        let closing_paren = self.next_if(|x| matches!(x.kind(), TokenKind::CloseParen));
         if closing_paren.is_none() {
             self.errors
                 .push(ParsingError::ExpectedToken(ExpectedToken::ClosingParen));
@@ -235,48 +200,12 @@ impl Parser {
         expr
     }
 
-    // fn peek_prev(&self) -> Option<&Token> {
-    //     self.tokens.get(self.cursor - 1)
-    // }
-
-    // fn peek(&self) -> Option<&Token> {
-    //     self.tokens.get(self.cursor)
-    // }
-
-    // fn peek_next(&self) -> Option<&Token> {
-    //     self.tokens.get(self.cursor + 1)
-    // }
-
-    // fn peek_n(&self, n: usize) -> Option<&Token> {
-    //     self.tokens.get(self.cursor + n)
-    // }
-
-    // fn increment_cursor(&mut self) {
-    //     self.cursor += 1;
-    // }
-
-    // fn next(&mut self) -> Option<Token> {
-    //     self.increment_cursor();
-    //     self.peek_prev()?.clone().into()
-    // }
-
-    // fn next_if(&mut self, condition: impl Fn(&Token) -> bool) -> Option<Token> {
-    //     self.next_map(|x| if condition(x) { Some(x.clone()) } else { None })
-    // }
-
-    // fn next_map<T>(&mut self, map: impl Fn(&Token) -> Option<T>) -> Option<T> {
-    //     let next = self.tokens.get(self.cursor)?.clone();
-    //     let result = map(&next)?;
-    //     self.increment_cursor();
-    //     Some(result)
-    // }
-
-    fn next_if_op(&mut self) -> Option<Op> {
-        self.scanner.next_if_map(|x| x.as_op())
+    fn next_if(&mut self, cond: impl Fn(Token) -> bool) -> Option<Token> {
+        self.scanner.next_if(cond)
     }
 
-    fn next_if_literal_expr(&mut self) -> Option<Expr> {
-        self.scanner.next_if_map(|x| x.as_literal_expr())
+    fn next_if_map<T>(&mut self, cond: impl Fn(Token) -> Option<T>) -> Option<T> {
+        self.scanner.next_if_map(cond)
     }
 
     fn next_if_keyword(&mut self) -> Option<Keyword> {
@@ -286,20 +215,4 @@ impl Parser {
     fn next_if_identifier(&mut self) -> Option<String> {
         self.scanner.next_if_map(|x| x.as_identifier())
     }
-
-    // fn next_while(&mut self, condition: impl Fn(&Token) -> bool) {
-    //     loop {
-    //         if self.next_if(&condition).is_none() {
-    //             break;
-    //         }
-    //     }
-    // }
-
-    fn next_if_cmp(&mut self) -> Option<Cmp> {
-        self.scanner.next_if_map(|x| x.as_comparison())
-    }
-
-    // fn is_at_end(&self) -> bool {
-    //     self.peek().is_none()
-    // }
 }

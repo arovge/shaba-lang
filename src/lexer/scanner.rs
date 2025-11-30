@@ -104,10 +104,7 @@ impl Scanner {
 
     fn is_at_start_of_comment(&self) -> bool {
         let cond = |c: char| c == '/';
-        self.peek()
-            .map(cond)
-            .and_then(|_| self.peek_next().map(cond))
-            .unwrap_or(false)
+        self.peek().map(cond) == Some(true) && self.peek_next().map(cond) == Some(true)
     }
 
     fn is_next_char_whitespace(&self) -> bool {

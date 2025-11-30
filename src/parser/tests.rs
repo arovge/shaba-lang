@@ -3,7 +3,7 @@ use crate::{
     parser::{
         self,
         ast::{BinaryOp, Decl, Expr, Node, UnaryOp},
-        error::ParserError,
+        error::{ExpectedToken, ParserError, ParsingError},
     },
 };
 
@@ -169,6 +169,7 @@ fn parses_unary() {
     let input = r#"
         -7
         !21
+        !!-36
     "#;
     let result = parse_str(input);
     let expected = vec![
@@ -180,7 +181,29 @@ fn parses_unary() {
             op: UnaryOp::Negate,
             expr: Box::new(Expr::Int(21)),
         }),
+        Node::Expr(Expr::Unary {
+            op: UnaryOp::Negate,
+            expr: Box::new(Expr::Unary {
+                op: UnaryOp::Negate,
+                expr: Box::new(Expr::Unary {
+                    op: UnaryOp::Minus,
+                    expr: Box::new(Expr::Int(36)),
+                }),
+            }),
+        }),
     ];
+    assert_eq!(result, expected);
+}
+
+#[test]
+fn unterminated_grouping() {
+    let input = r#"
+        (5 > 3
+    "#;
+    let result = try_parse_str(input).unwrap_err();
+    let expected = ParserError {
+        errors: vec![ParsingError::ExpectedToken(ExpectedToken::ClosingParen)],
+    };
     assert_eq!(result, expected);
 }
 
@@ -244,16 +267,5 @@ fn decl_unary_expr() {
             expr: Box::new(Expr::Int(5)),
         },
     })];
-    assert_eq!(result, expected);
-}
-
-#[test]
-#[ignore]
-fn unterminated_grouping() {
-    let input = r#"
-        a == (5 > 3
-    "#;
-    let result = try_parse_str(input).unwrap_err();
-    let expected = ParserError { errors: vec![] };
     assert_eq!(result, expected);
 }

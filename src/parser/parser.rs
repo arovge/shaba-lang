@@ -174,7 +174,7 @@ impl Parser {
     fn unary(&mut self) -> Expr {
         let op = self.next_if_map(|x| x.as_unary_op());
         if let Some(op) = op {
-            let expr = self.literal();
+            let expr = self.unary();
             return Expr::Unary {
                 op,
                 expr: Box::new(expr),
@@ -185,20 +185,21 @@ impl Parser {
 
     fn literal(&mut self) -> Expr {
         let literal = self.next_if_map(|x| x.as_literal());
-        if literal.is_some() {
-            return literal.unwrap();
+        if let Some(literal) = literal {
+            return literal;
         }
         let open_paren = self.next_if(|x| matches!(x.kind(), TokenKind::OpenParen));
-        if open_paren.is_none() {
-            panic!();
+        if open_paren.is_some() {
+            let expr = self.expr();
+            let closing_paren = self.next_if(|x| matches!(x.kind(), TokenKind::CloseParen));
+            if closing_paren.is_none() {
+                self.errors
+                    .push(ParsingError::ExpectedToken(ExpectedToken::ClosingParen));
+            }
+            return expr;
         }
-        let expr = self.expr();
-        let closing_paren = self.next_if(|x| matches!(x.kind(), TokenKind::CloseParen));
-        if closing_paren.is_none() {
-            self.errors
-                .push(ParsingError::ExpectedToken(ExpectedToken::ClosingParen));
-        }
-        expr
+
+        panic!("no literal to parse");
     }
 
     fn next_if(&mut self, cond: impl Fn(Token) -> bool) -> Option<Token> {

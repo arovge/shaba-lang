@@ -3,7 +3,7 @@ use super::{
     ast::{Expr, Node},
     error::{ExpectedToken, ParserError, ParsingError},
 };
-use crate::lexer::token::{Keyword, Token, TokenKind};
+use crate::lexer::token::{Token, TokenKind};
 
 pub struct Parser {
     scanner: Scanner,
@@ -31,81 +31,6 @@ impl Parser {
         }
         Ok(statements)
     }
-
-    // fn statement(&mut self) -> Option<Node> {
-    //     // decl | expr ;
-    //     self.decl()
-    //         .map(Node::Decl)
-    //         .or_else(|| self.expr().map(Node::Expr))
-    // }
-
-    // fn decl(&mut self) -> Option<Decl> {
-    //     // let_decl | fn_decl
-    //     self.let_decl().or_else(|| self.fn_decl())
-    // }
-
-    // fn fn_decl(&mut self) -> Option<Decl> {
-    //     self.scanner
-    //         .next_if(|x| x.as_keyword() == Some(Keyword::Fn))?;
-
-    //     let identifier = self.next_if_identifier().expect("Expected identifier");
-    //     self.scanner
-    //         .next_if(|x| matches!(x.kind(), TokenKind::OpenParen))
-    //         .expect("Expected '(' in fn decl");
-
-    //     // TODO: Parse args
-
-    //     self.scanner
-    //         .next_if(|x| matches!(x.kind(), TokenKind::CloseParen))
-    //         .expect("Expected ')' in fn decl");
-
-    //     // TODO: Parse return type
-
-    //     self.scanner
-    //         .next_if(|x| matches!(x.kind(), TokenKind::OpenBrace))
-    //         .expect("Expected '{' in fn decl");
-
-    //     // TOOD: Parse fn body
-
-    //     self.scanner
-    //         .next_if(|x| matches!(x.kind(), TokenKind::CloseBrace))
-    //         .expect("Expected '}' in fn decl");
-
-    //     Some(Decl::Fn { identifier })
-    // }
-
-    // fn let_decl(&mut self) -> Option<Decl> {
-    //     self.scanner
-    //         .next_if(|x| x.as_keyword() == Some(Keyword::Let))?;
-    //     let identifier = self.next_if_identifier().expect("Expected identifier");
-    //     self.scanner
-    //         .next_if(|x| *x.kind() == TokenKind::Eq)
-    //         .expect("Expected = in let decl");
-    //     let expr = self
-    //         .expr()
-    //         .expect("Expected expression after `let <ident> = `");
-    //     Some(Decl::Let { identifier, expr })
-    // }
-
-    // fn expr(&mut self) -> Option<Expr> {
-    //     // if_expr | unit_expr | literal | unary_expr | binary_expr ;
-    //     self.unit_expr()
-    //         .or_else(|| self.cmp_expr())
-    //         .or_else(|| self.literal())
-    //         .or_else(|| self.unary_expr())
-    // }
-
-    // fn unit_expr(&mut self) -> Option<Expr> {
-    //     let is_unit_expr = matches!(self.scanner.peek()?.kind(), TokenKind::OpenParen)
-    //         && matches!(self.scanner.peek_next()?.kind(), TokenKind::CloseParen);
-    //     if is_unit_expr {
-    //         self.scanner.next();
-    //         self.scanner.next();
-    //         Some(Expr::Unit)
-    //     } else {
-    //         None
-    //     }
-    // }
 
     fn expr(&mut self) -> Expr {
         self.equality()

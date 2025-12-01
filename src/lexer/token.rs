@@ -62,6 +62,7 @@ pub enum TokenKind {
     Period,
     QuestionMark,
     Negate,
+    Nil,
     Literal(Literal),
     Identifier(String),
     Keyword(Keyword),
@@ -125,6 +126,7 @@ pub enum Keyword {
     Fn,
     If,
     Else,
+    Nil,
 }
 
 impl Keyword {
@@ -134,6 +136,7 @@ impl Keyword {
             "fn" => Keyword::Fn.into(),
             "if" => Keyword::If.into(),
             "else" => Keyword::Else.into(),
+            "nil" => Keyword::Nil.into(),
             _ => None,
         }
     }

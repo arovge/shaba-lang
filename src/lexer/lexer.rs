@@ -1,19 +1,19 @@
 use super::{
-    error::{LexerError, TokenizeError},
-    source::Source,
+    error::{LexerError, LexingError},
+    scanner::Scanner,
     token::{Keyword, Literal, TokenKind},
 };
 use crate::lexer::token::Token;
 
 pub struct Lexer {
-    source: Source,
+    scanner: Scanner,
 }
 
 impl Lexer {
     pub fn new(source: &str) -> Lexer {
-        Self {
-            source: Source::new(source),
-        }
+        let scanner = Scanner::new(source);
+
+        Self { scanner }
     }
 
     pub fn tokenize(&mut self) -> Result<Vec<Token>, LexerError> {
@@ -23,16 +23,16 @@ impl Lexer {
             tokens.push(token);
         }
 
-        assert!(self.source.is_eof());
+        assert!(self.scanner.is_eof(), "Not at end of file");
         Ok(tokens)
     }
 
     fn next_token(&mut self) -> Result<Option<Token>, LexerError> {
-        self.source.advance_to_next_token();
+        self.scanner.advance_to_next_token();
 
-        let start = self.source.location();
+        let start = self.scanner.location();
         let next_token_kind = self.next_token_kind();
-        let end = self.source.location();
+        let end = self.scanner.location();
 
         match next_token_kind {
             Ok(Some(token_kind)) => Ok(Some(Token::new(token_kind, start, end))),
@@ -41,7 +41,7 @@ impl Lexer {
         }
     }
 
-    fn next_token_kind(&mut self) -> Result<Option<TokenKind>, TokenizeError> {
+    fn next_token_kind(&mut self) -> Result<Option<TokenKind>, LexingError> {
         let single_char_token = self.read_single_char_token();
         if single_char_token.is_some() {
             return Ok(single_char_token);
@@ -57,17 +57,17 @@ impl Lexer {
             return Ok(lexme);
         }
 
-        let Some(lexme) = self.source.next() else {
+        let Some(lexme) = self.scanner.next() else {
             return Ok(None);
         };
-        Err(TokenizeError::UnknownLexme(lexme))
+        Err(LexingError::UnknownLexme(lexme))
     }
 
     fn read_lexme(&mut self) -> Option<TokenKind> {
-        let ch = self.source.next_if(is_start_of_identifier)?;
+        let ch = self.scanner.next_if(is_start_of_identifier)?;
 
         let mut chars: Vec<char> = vec![ch];
-        while let Some(ch) = self.source.next_if(is_identifier) {
+        while let Some(ch) = self.scanner.next_if(is_identifier) {
             chars.push(ch);
         }
         let lexme = &String::from_iter(chars);
@@ -88,7 +88,7 @@ impl Lexer {
     // The token should be responsible for trying to map a string into Option<TokenKind>
     // This should only read stuff and present it to that fn
     fn read_single_char_token(&mut self) -> Option<TokenKind> {
-        let token_kind = self.source.next_map(TokenKind::from_char)?;
+        let token_kind = self.scanner.next_if_map(TokenKind::from_char)?;
 
         let is_maybe_double_char_token = matches!(token_kind, TokenKind::Eq)
             || matches!(token_kind, TokenKind::GreaterThan)
@@ -99,7 +99,7 @@ impl Lexer {
             return Some(token_kind);
         }
 
-        if self.source.next_if(|x| x == '=').is_some() {
+        if self.scanner.next_if(|x| x == '=').is_some() {
             match token_kind {
                 TokenKind::Eq => Some(TokenKind::EqEq),
                 TokenKind::GreaterThan => Some(TokenKind::GreaterThanEq),
@@ -112,7 +112,7 @@ impl Lexer {
         }
     }
 
-    fn read_literal(&mut self) -> Result<Option<TokenKind>, TokenizeError> {
+    fn read_literal(&mut self) -> Result<Option<TokenKind>, LexingError> {
         if let Some(str) = self.read_str()? {
             let token_kind = TokenKind::Literal(Literal::String(str));
             return Ok(Some(token_kind));
@@ -124,29 +124,29 @@ impl Lexer {
         Ok(None)
     }
 
-    fn read_str(&mut self) -> Result<Option<String>, TokenizeError> {
-        if self.source.next_if(|ch| ch == '"').is_none() {
+    fn read_str(&mut self) -> Result<Option<String>, LexingError> {
+        if self.scanner.next_if(|ch| ch == '"').is_none() {
             return Ok(None);
         }
 
         let str = self
-            .source
+            .scanner
             .take_while(|ch| ch != '"')
             .unwrap_or(String::from(""));
 
-        let is_unterminated = self.source.peek() != Some('"');
+        let is_unterminated = self.scanner.peek() != Some('"');
 
         if is_unterminated {
-            return Err(TokenizeError::UnterminatedString);
+            return Err(LexingError::UnterminatedString);
         }
 
-        self.source.next();
+        self.scanner.next();
         Ok(Some(str))
     }
 
     fn read_number(&mut self) -> Option<Literal> {
         let num = self
-            .source
+            .scanner
             .take_while(|ch| ch.is_ascii_digit())?
             .parse::<i32>()
             .ok()?;
